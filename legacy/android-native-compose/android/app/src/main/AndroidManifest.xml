@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.vigilgrace.safety">
+
+    <!-- Core Network and Hardware Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+
+    <!-- Location and Sensor Permissions -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
+
+    <!-- Foreground Service Assertions (Android 14/15 Compliance) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <application
+        android:name=".VigilGraceApp"
+        android:allowBackup="false"
+        android:icon="@android:drawable/ic_secure"
+        android:label="VigilGrace"
+        android:roundIcon="@android:drawable/ic_secure"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.Material.NoActionBar">
+
+        <!-- Entry Activity -->
+        <activity
+            android:name=".presentation.MainActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Material.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Core Background Engine -->
+        <service
+            android:name=".core.service.EmergencyMonitoringService"
+            android:foregroundServiceType="microphone|location|specialUse"
+            android:exported="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_EXPLANATION"
+                android:value="VigilGrace utilizes specialized sensor fusion calculations to continuously monitor for anomalies and sudden impacts in real time." />
+        </service>
+
+        <!-- System Reset Recovery Receiver -->
+        <receiver
+            android:name=".core.receiver.BootCompletedReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Mapbox Shared Public Token Metadata Placeholder -->
+        <meta-data
+            android:name="com.mapbox.token"
+            android:value="pk.PLACEHOLDER_TOKEN" />
+
+    </application>
+</manifest>

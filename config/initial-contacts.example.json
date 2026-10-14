@@ -1,0 +1,15 @@
+{
+  "apiBaseUrl": "http://localhost:4001",
+  "initialContacts": [
+    {
+      "name": "Mom",
+      "phone": "REPLACE_WITH_CONTACT_1_NUMBER",
+      "relation": "Family"
+    },
+    {
+      "name": "Emergency contact 2",
+      "phone": "REPLACE_WITH_CONTACT_2_NUMBER",
+      "relation": "Trusted contact"
+    }
+  ]
+}

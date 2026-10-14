@@ -1,0 +1,91 @@
+/**
+ * User-configurable monitoring + SOS settings (persisted to app-private JSON).
+ * Privacy defaults: shake off, voice off, evidence recording off,
+ * corroboration required for voice-triggered actions, 10 s SOS countdown.
+ */
+
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
+import {
+  ACOUSTIC_PRESETS,
+  DEFAULT_ACOUSTIC_CONFIG,
+  type AcousticConfig,
+  type VoiceSensitivity,
+} from '@/core/voice/acoustic-analyzer';
+import { SENSITIVITY_PRESETS, type ShakeSensitivity } from '@/core/motion/shake-detector';
+import { jsonFileStorage } from '@/services/json-storage';
+
+export interface SettingsState {
+  /** SOS countdown before sending (seconds). 0 = send immediately. */
+  countdownSeconds: number;
+  shakeEnabled: boolean;
+  shakeSensitivity: ShakeSensitivity;
+  voiceEnabled: boolean;
+  voiceSensitivity: VoiceSensitivity;
+  voiceRequireCorroboration: boolean;
+  voiceKeywords: string[];
+  /** Record a consented short audio clip during SOS (metadata only leaves device). */
+  evidenceRecordingConsent: boolean;
+  pendantDoublePressWindowMs: number;
+
+  setCountdownSeconds: (seconds: number) => void;
+  setShakeEnabled: (enabled: boolean) => void;
+  setShakeSensitivity: (sensitivity: ShakeSensitivity) => void;
+  setVoiceEnabled: (enabled: boolean) => void;
+  setVoiceSensitivity: (sensitivity: VoiceSensitivity) => void;
+  setVoiceRequireCorroboration: (required: boolean) => void;
+  setVoiceKeywords: (keywords: string[]) => void;
+  setEvidenceRecordingConsent: (consent: boolean) => void;
+  setPendantDoublePressWindowMs: (ms: number) => void;
+
+  /** Derived acoustic config for the analyzer. */
+  acousticConfig: () => AcousticConfig;
+}
+
+export const useSettingsStore = create<SettingsState>()(
+  persist(
+    (set, get) => ({
+      countdownSeconds: 10,
+      shakeEnabled: false,
+      shakeSensitivity: 'medium',
+      voiceEnabled: false,
+      voiceSensitivity: 'medium',
+      voiceRequireCorroboration: true,
+      voiceKeywords: DEFAULT_ACOUSTIC_CONFIG.keywords,
+      evidenceRecordingConsent: false,
+      pendantDoublePressWindowMs: 450,
+
+      setCountdownSeconds: (seconds) =>
+        set({ countdownSeconds: Math.max(0, Math.min(30, Math.round(seconds))) }),
+      setShakeEnabled: (shakeEnabled) => set({ shakeEnabled }),
+      setShakeSensitivity: (shakeSensitivity) => set({ shakeSensitivity }),
+      setVoiceEnabled: (voiceEnabled) => set({ voiceEnabled }),
+      setVoiceSensitivity: (voiceSensitivity) => set({ voiceSensitivity }),
+      setVoiceRequireCorroboration: (voiceRequireCorroboration) => set({ voiceRequireCorroboration }),
+      setVoiceKeywords: (voiceKeywords) => set({ voiceKeywords: voiceKeywords.slice(0, 20) }),
+      setEvidenceRecordingConsent: (evidenceRecordingConsent) => set({ evidenceRecordingConsent }),
+      setPendantDoublePressWindowMs: (ms) =>
+        set({ pendantDoublePressWindowMs: Math.max(150, Math.min(1500, Math.round(ms))) }),
+
+      acousticConfig: () => {
+        const s = get();
+        return {
+          ...ACOUSTIC_PRESETS[s.voiceSensitivity],
+          enabled: s.voiceEnabled,
+          cooldownMs: DEFAULT_ACOUSTIC_CONFIG.cooldownMs,
+          requireCorroboration: s.voiceRequireCorroboration,
+          keywords: s.voiceKeywords,
+        };
+      },
+    }),
+    {
+      name: 'vigilgrace_settings',
+      storage: createJSONStorage(() => jsonFileStorage),
+    },
+  ),
+);
+
+export function shakeConfigForSensitivity(sensitivity: ShakeSensitivity) {
+  return SENSITIVITY_PRESETS[sensitivity];
+}
