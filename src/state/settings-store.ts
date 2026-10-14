@@ -15,6 +15,7 @@ import {
 } from '@/core/voice/acoustic-analyzer';
 import { SENSITIVITY_PRESETS, type ShakeSensitivity } from '@/core/motion/shake-detector';
 import { jsonFileStorage } from '@/services/json-storage';
+import type { ThemeId } from '@/ui/theme-context';
 
 export interface SettingsState {
   /** SOS countdown before sending (seconds). 0 = send immediately. */
@@ -28,6 +29,7 @@ export interface SettingsState {
   /** Record a consented short audio clip during SOS (metadata only leaves device). */
   evidenceRecordingConsent: boolean;
   pendantDoublePressWindowMs: number;
+  themeId: ThemeId;
 
   setCountdownSeconds: (seconds: number) => void;
   setShakeEnabled: (enabled: boolean) => void;
@@ -38,6 +40,7 @@ export interface SettingsState {
   setVoiceKeywords: (keywords: string[]) => void;
   setEvidenceRecordingConsent: (consent: boolean) => void;
   setPendantDoublePressWindowMs: (ms: number) => void;
+  setThemeId: (themeId: ThemeId) => void;
 
   /** Derived acoustic config for the analyzer. */
   acousticConfig: () => AcousticConfig;
@@ -55,6 +58,7 @@ export const useSettingsStore = create<SettingsState>()(
       voiceKeywords: DEFAULT_ACOUSTIC_CONFIG.keywords,
       evidenceRecordingConsent: false,
       pendantDoublePressWindowMs: 450,
+      themeId: 'gothic-noir',
 
       setCountdownSeconds: (seconds) =>
         set({ countdownSeconds: Math.max(0, Math.min(30, Math.round(seconds))) }),
@@ -67,6 +71,7 @@ export const useSettingsStore = create<SettingsState>()(
       setEvidenceRecordingConsent: (evidenceRecordingConsent) => set({ evidenceRecordingConsent }),
       setPendantDoublePressWindowMs: (ms) =>
         set({ pendantDoublePressWindowMs: Math.max(150, Math.min(1500, Math.round(ms))) }),
+      setThemeId: (themeId) => set({ themeId }),
 
       acousticConfig: () => {
         const s = get();

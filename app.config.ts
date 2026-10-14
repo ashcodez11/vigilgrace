@@ -132,7 +132,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         origin: false,
       },
       eas: {
-        projectId: process.env.EAS_PROJECT_ID ?? undefined,
+        projectId: process.env.EAS_PROJECT_ID ?? '1fa56664-0cf2-4ff6-85ef-7aa798ad1cc9',
       },
     },
   };

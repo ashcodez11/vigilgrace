@@ -28,11 +28,14 @@ import { usePendantStore } from '@/state/pendant-store';
 import { useSettingsStore } from '@/state/settings-store';
 import { useVoiceLogStore } from '@/state/voice-log-store';
 import { AppButton, Badge, Banner, Card, Row, Screen } from '@/ui/components';
-import { colors, radius, spacing } from '@/ui/theme';
+import { useTheme } from '@/ui/theme-context';
+import { radius, spacing } from '@/ui/theme';
 
 const VOICE_CORROBORATION_WINDOW_MS = 15000;
 
 export default function DashboardScreen() {
+  const { theme } = useTheme();
+  const colors = theme.colors;
   const { state, trigger, cancel, confirmNow, retry, reset, evidenceRecording } = useSosController();
   const contacts = useContactsStore((s) => s.contacts);
   const userName = useAuthStore((s) => s.user?.name ?? '');
@@ -167,8 +170,8 @@ export default function DashboardScreen() {
 
       {pendingVoice ? (
         <Card style={{ borderColor: colors.warning }}>
-          <Text style={styles.promptTitle}>Possible distress detected</Text>
-          <Text style={styles.promptBody}>
+          <Text style={[styles.promptTitle, { color: colors.warning }]}>Possible distress detected</Text>
+          <Text style={[styles.promptBody, { color: colors.text }]}>
             Acoustic prototype confidence {(pendingVoice.confidence * 100).toFixed(0)}% at{' '}
             {pendingVoice.dbfs.toFixed(0)} dBFS{pendingVoice.voiced ? ' (speech-like)' : ''}. This is
             NOT a confirmed emergency — corroboration is required before sending an alert.
@@ -195,20 +198,20 @@ export default function DashboardScreen() {
 
       <Card>
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>Live location</Text>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Live location</Text>
           <Badge label={location ? 'acquired' : 'idle'} />
         </View>
         {previewUrl ? (
           <Pressable onPress={() => location && void openInMaps(location)}>
             <Image
               source={{ uri: previewUrl }}
-              style={styles.map}
+              style={[styles.map, { backgroundColor: colors.surfaceAlt }]}
               contentFit="cover"
               accessibilityLabel="Map preview of current location"
             />
           </Pressable>
         ) : (
-          <Text style={styles.muted}>
+          <Text style={[styles.muted, { color: colors.textMuted }]}>
             {locationError ?? 'Location not acquired yet. Tap refresh and allow location access.'}
           </Text>
         )}
@@ -247,7 +250,7 @@ export default function DashboardScreen() {
       </Card>
 
       <Card>
-        <Text style={styles.cardTitle}>Trigger status</Text>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>Trigger status</Text>
         <Row
           label="Shake-to-SOS"
           value={shakeEnabled ? `${shake.status}${shake.error ? ` — ${shake.error}` : ''}` : 'off (Settings)'}
@@ -260,7 +263,7 @@ export default function DashboardScreen() {
               : 'off (Settings)'
           }
         />
-        <Text style={styles.footnote}>
+        <Text style={[styles.footnote, { color: colors.textMuted }]}>
           Monitoring runs only while VigilGrace is in the foreground. Background detection is not
           claimed or supported.
         </Text>
@@ -296,11 +299,25 @@ function SosPanel({
   onRetry: () => void;
   onDismiss: () => void;
 }) {
+  const { theme } = useTheme();
+  const colors = theme.colors;
   const active = ['countdown', 'sending', 'retrying'].includes(state.status);
   const mock = state.report?.deliveryMode === 'mock';
   const deliveredCount =
     state.report?.results.filter((r) => ['delivered', 'simulated', 'sent'].includes(r.state)).length ??
     0;
+
+  const sosButtonBg =
+    state.status === 'countdown'
+      ? theme.id === 'soft-girl' ? '#E89B9B' : '#8A1C13'
+      : (state.status === 'sending' || state.status === 'retrying')
+        ? theme.id === 'soft-girl' ? '#D4A5A5' : '#5A2A25'
+        : colors.danger;
+
+  const sosBorderColor =
+    state.status === 'countdown' || state.status === 'sending' || state.status === 'retrying'
+      ? colors.warning
+      : theme.id === 'soft-girl' ? '#F5A5A5' : '#FF6A5E';
 
   return (
     <View style={styles.sosWrap}>
@@ -311,19 +328,21 @@ function SosPanel({
         accessibilityLabel="Send emergency SOS alert"
         style={({ pressed }) => [
           styles.sosButton,
-          state.status === 'countdown' && styles.sosCountdown,
-          (state.status === 'sending' || state.status === 'retrying') && styles.sosSending,
+          {
+            backgroundColor: sosButtonBg,
+            borderColor: sosBorderColor,
+          },
           pressed && !active ? { opacity: 0.9 } : null,
         ]}
       >
-        <Text style={styles.sosText}>
+        <Text style={[styles.sosText, { color: theme.id === 'soft-girl' ? colors.text : '#FFFFFF' }]}>
           {state.status === 'countdown'
             ? `CANCEL? ${countdownLeft}`
             : state.status === 'sending' || state.status === 'retrying'
               ? `SENDING… (${state.attempt})`
               : 'SOS'}
         </Text>
-        <Text style={styles.sosHint}>
+        <Text style={[styles.sosHint, { color: theme.id === 'soft-girl' ? colors.text : '#FFE9E7' }]}>
           {state.status === 'countdown'
             ? 'Tap CANCEL below if accidental'
             : `Tap to alert contacts · ${countdownSeconds}s countdown`}
@@ -331,7 +350,7 @@ function SosPanel({
       </Pressable>
 
       {evidenceRecording ? (
-        <Text style={styles.evidenceNote}>● Recording consented evidence clip (on-device only)</Text>
+        <Text style={[styles.evidenceNote, { color: colors.warning }]}>● Recording consented evidence clip (on-device only)</Text>
       ) : null}
 
       {state.status === 'countdown' ? (
@@ -391,32 +410,29 @@ function SosPanel({
 const styles = StyleSheet.create({
   sosWrap: { gap: spacing.md },
   sosButton: {
-    backgroundColor: colors.danger,
     borderRadius: radius.lg,
     minHeight: 180,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,
     borderWidth: 4,
-    borderColor: '#FF6A5E',
   },
-  sosCountdown: { backgroundColor: '#8A1C13', borderColor: colors.warning },
-  sosSending: { backgroundColor: '#5A2A25', borderColor: colors.warning },
-  sosText: { color: '#FFFFFF', fontSize: 56, fontWeight: '900', letterSpacing: 2 },
-  sosHint: { color: '#FFE9E7', fontSize: 14, marginTop: spacing.sm, textAlign: 'center' },
-  evidenceNote: { color: colors.warning, fontSize: 13, textAlign: 'center' },
+  sosCountdown: {},
+  sosSending: {},
+  sosText: { fontSize: 56, fontWeight: '900', letterSpacing: 2 },
+  sosHint: { fontSize: 14, marginTop: spacing.sm, textAlign: 'center' },
+  evidenceNote: { fontSize: 13, textAlign: 'center' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { color: colors.text, fontSize: 17, fontWeight: '700' },
-  muted: { color: colors.textMuted, fontSize: 14, lineHeight: 20 },
+  cardTitle: { fontSize: 17, fontWeight: '700' },
+  muted: { fontSize: 14, lineHeight: 20 },
   map: {
     width: '100%',
     height: 180,
     borderRadius: radius.sm,
-    backgroundColor: colors.surfaceAlt,
   },
   rowActions: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  footnote: { color: colors.textMuted, fontSize: 12, lineHeight: 17 },
-  promptTitle: { color: colors.warning, fontWeight: '800', fontSize: 16 },
-  promptBody: { color: colors.text, fontSize: 14, lineHeight: 20 },
+  footnote: { fontSize: 12, lineHeight: 17 },
+  promptTitle: { fontWeight: '800', fontSize: 16 },
+  promptBody: { fontSize: 14, lineHeight: 20 },
   promptActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
 });

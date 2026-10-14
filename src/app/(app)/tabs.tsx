@@ -1,22 +1,25 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
 
-import { colors } from '@/ui/theme';
+import { useTheme } from '@/ui/theme-context';
 
 function TabIcon({ glyph, color }: { glyph: string; color: string }) {
   return <Text style={{ fontSize: 20, color }}>{glyph}</Text>;
 }
 
 export default function TabsLayout() {
+  const { theme } = useTheme();
+  const colors = theme.colors;
+
   return (
     <Tabs
       screenOptions={{
         headerStyle: { backgroundColor: colors.surface },
-        headerTintColor: colors.text,
+        headerTintColor: colors.text as any,
         headerTitleStyle: { fontWeight: '700' },
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: colors.primary as any,
+        tabBarInactiveTintColor: colors.textMuted as any,
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
@@ -25,7 +28,7 @@ export default function TabsLayout() {
         options={{
           title: 'Safety',
           tabBarLabel: 'Safety',
-          tabBarIcon: ({ color }) => <TabIcon glyph="◉" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon glyph="◉" color={color as any} />,
         }}
       />
       <Tabs.Screen
@@ -33,7 +36,7 @@ export default function TabsLayout() {
         options={{
           title: 'Emergency contacts',
           tabBarLabel: 'Contacts',
-          tabBarIcon: ({ color }) => <TabIcon glyph="☎" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon glyph="☎" color={color as any} />,
         }}
       />
       <Tabs.Screen
@@ -41,7 +44,7 @@ export default function TabsLayout() {
         options={{
           title: 'Emergency history',
           tabBarLabel: 'History',
-          tabBarIcon: ({ color }) => <TabIcon glyph="☰" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon glyph="☰" color={color as any} />,
         }}
       />
       <Tabs.Screen
@@ -49,7 +52,7 @@ export default function TabsLayout() {
         options={{
           title: 'Settings',
           tabBarLabel: 'Settings',
-          tabBarIcon: ({ color }) => <TabIcon glyph="⚙" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon glyph="⚙" color={color as any} />,
         }}
       />
     </Tabs>
