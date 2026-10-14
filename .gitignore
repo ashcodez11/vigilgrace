@@ -49,4 +49,6 @@ backend/server/data/
 backend/server/node_modules/
 
 # local evidence recordings (never commit)
-evidence/
+# Allow src/core/evidence/ source code, but block data directories
+/evidence/
+backend/server/evidence/
