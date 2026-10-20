@@ -21,6 +21,7 @@ vi.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
 vi.mock('expo-constants', () => ({
   default: { expoConfig: { extra: { apiBaseUrl: process.env.VIGILGRACE_LIVE_BASE ?? '' } } },
 }));
+vi.mock('expo-device', () => ({ isDevice: true }));
 vi.mock('expo-secure-store', () => ({
   getItemAsync: async () => null,
   setItemAsync: async () => undefined,

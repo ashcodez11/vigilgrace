@@ -139,7 +139,13 @@ export function attachEvidence(
   return apiFetch(`/alerts/${alertId}/evidence`, { method: 'POST', token, body: { records } });
 }
 
-export function healthCheck(): Promise<{ ok: boolean; name: string; version: string }> {
+export function healthCheck(): Promise<{
+  ok: boolean;
+  name: string;
+  version: string;
+  /** Configuration state only — never a credential. */
+  smsProvider?: 'mock' | 'twilio' | 'webhook' | 'unknown';
+}> {
   return apiFetch('/health');
 }
 

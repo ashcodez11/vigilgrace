@@ -31,6 +31,7 @@ const secureStore = new Map<string, string>();
 
 vi.mock('react-native', () => ({ Platform: { OS: 'ios' } }));
 vi.mock('expo-constants', () => ({ default: { expoConfig: { extra: { apiBaseUrl: '' } } } }));
+vi.mock('expo-device', () => ({ isDevice: true }));
 vi.mock('expo-crypto', () => ({
   getRandomBytes: (length: number) => new Uint8Array(randomBytes(length)),
   randomUUID: () => randomUUID(),

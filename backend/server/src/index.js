@@ -13,6 +13,7 @@
  */
 
 import { createServer } from 'node:http';
+import { networkInterfaces } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -23,15 +24,55 @@ import { createStore } from './util/store.js';
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dataFile =
   process.env.VIGILGRACE_DATA_FILE || path.join(packageRoot, 'data', 'db.json');
-const port = Number(process.env.PORT || 4001);
+/**
+ * Resolve the listening port.
+ *
+ * `PORT=0` (or a non-numeric value) makes the OS pick an ephemeral port. That
+ * is useful for tests but hostile for a dev server the phone is supposed to
+ * find: the app has a fixed URL and the server binds somewhere else. Treat
+ * anything outside 1..65535 as "unset" and say so, instead of quietly binding
+ * a port nobody can reach.
+ */
+function resolvePort(raw) {
+  const text = String(raw ?? '').trim();
+  if (!text) return { port: 4001, ignored: null };
+  const parsed = Number(text);
+  if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 65535) {
+    return { port: parsed, ignored: null };
+  }
+  return { port: 4001, ignored: text };
+}
+
+const { port, ignored } = resolvePort(process.env.PORT);
 const host = process.env.VIGILGRACE_HOST || '0.0.0.0';
+
+function lanAddresses() {
+  return Object.values(networkInterfaces())
+    .flat()
+    .filter((iface) => iface && iface.family === 'IPv4' && !iface.internal)
+    .map((iface) => iface.address);
+}
 
 const store = createStore({ file: dataFile });
 const app = buildApp({ store });
 
-createServer(app).listen(port, host, () => {
+const server = createServer(app);
+
+server.listen(port, host, () => {
   const mode = resolveMode(process.env);
-  console.log(`VigilGrace backend listening on http://${host}:${port}`);
+  const bound = server.address();
+  const boundPort = typeof bound === 'object' && bound ? bound.port : port;
+  console.log(`VigilGrace backend listening on http://${host}:${boundPort}`);
+  console.log(`Local health check: http://127.0.0.1:${boundPort}/health`);
+  for (const address of lanAddresses()) {
+    console.log(`LAN (phone) base URL: http://${address}:${boundPort}`);
+  }
+  if (ignored !== null) {
+    console.log(
+      `Ignoring PORT=${JSON.stringify(ignored)} (must be 1-65535); using ${boundPort} ` +
+        'because the app expects a fixed port.',
+    );
+  }
   console.log(`Data file: ${dataFile}`);
   if (mode === 'unknown') {
     console.log(

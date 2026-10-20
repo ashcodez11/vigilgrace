@@ -7,11 +7,18 @@
  */
 
 import Constants from 'expo-constants';
+import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 
 import { getSecureItem, setSecureItem } from './secure-store';
 
 const API_URL_OVERRIDE_KEY = 'apiBaseUrlOverride';
+
+/** Port the bundled backend listens on (backend/server/src/index.js). */
+export const DEFAULT_BACKEND_PORT = 4001;
+
+/** The Android emulator's alias for the host machine's loopback interface. */
+export const ANDROID_EMULATOR_HOST = '10.0.2.2';
 
 export class ApiError extends Error {
   constructor(
@@ -41,8 +48,12 @@ export class BackendUnreachableError extends Error {
   ) {
     super(
       `Cannot reach the VigilGrace backend at ${baseUrl}, so nothing was sent. ` +
-        'Start the backend ("npm run backend:start") or point the app at a reachable ' +
-        'server with EXPO_PUBLIC_API_URL / extra.apiBaseUrl, then retry.',
+        (detail ? `(${detail}) ` : '') +
+        'Start it on the computer that runs the app ("npm run backend:start"). A phone or ' +
+        'emulator cannot use the computer\'s "localhost", and 10.0.2.2 only exists inside the ' +
+        'Android emulator: on a physical phone use the computer\'s LAN address, e.g. ' +
+        'http://192.168.1.20:4001, via EXPO_PUBLIC_API_URL or the backend URL override in ' +
+        'Settings, then retry.',
     );
     this.name = 'BackendUnreachableError';
   }
@@ -51,28 +62,163 @@ export class BackendUnreachableError extends Error {
 function configuredBaseUrl(): string {
   const extra = Constants.expoConfig?.extra as Record<string, unknown> | undefined;
   const fromExtra = typeof extra?.apiBaseUrl === 'string' ? extra.apiBaseUrl : null;
-  return fromExtra ?? process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4001';
+  return fromExtra ?? process.env.EXPO_PUBLIC_API_URL ?? `http://localhost:${DEFAULT_BACKEND_PORT}`;
 }
 
-/** Map loopback to the Android emulator host alias when needed. */
-export function resolveApiBaseUrl(configured = configuredBaseUrl()): string {
-  const url = configured.replace(/\/+$/, '');
-  if (Platform.OS !== 'android') return url;
+/**
+ * Host the Expo dev server advertises, e.g. `192.168.1.20:8081`.
+ *
+ * This is the single most useful fact for a physical phone: Metro can only be
+ * reached from the handset at a LAN address, so that same address (with the
+ * backend's port) reaches the Mac's backend. Null when running a build with no
+ * dev server attached (a release/preview APK) — then the URL must be explicit.
+ */
+export function devServerHostname(): string | null {
+  const expoConfig = Constants.expoConfig as { hostUri?: string } | null;
+  const expoGoConfig = Constants.expoGoConfig as { debuggerHost?: string } | null;
+  const raw = expoConfig?.hostUri ?? expoGoConfig?.debuggerHost ?? null;
+  if (typeof raw !== 'string') return null;
+  const withoutScheme = raw.trim().replace(/^[a-z]+:\/\//i, '');
+  const hostAndPort = withoutScheme.split('/')[0] ?? '';
+  // Strip the dev server port; keep IPv6 literals intact (they are bracketed).
+  const host = hostAndPort.startsWith('[')
+    ? hostAndPort.slice(0, hostAndPort.indexOf(']') + 1)
+    : (hostAndPort.split(':')[0] ?? '');
+  return host || null;
+}
+
+/** Loopback names that only ever mean "this device", never "the computer". */
+export function isLoopbackHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '0.0.0.0' ||
+    host === '[::1]' ||
+    host === '::1'
+  );
+}
+
+/**
+ * Addresses that mean "the computer" only from a simulator/emulator: loopback
+ * names, plus the Android emulator's 10.0.2.2 alias. A saved Settings override
+ * holding 10.0.2.2 is just as dead on a handset as localhost is, so both are
+ * rewritten the same way.
+ */
+export function isHostMachineAlias(hostname: string): boolean {
+  return isLoopbackHostname(hostname) || hostname === ANDROID_EMULATOR_HOST;
+}
+
+/**
+ * A dev-server host the backend can be assumed to share: an IP literal or an
+ * mDNS name. A tunnel hostname (`*.exp.direct`) only forwards Metro's port, so
+ * reusing it for the backend would just move the failure — better to report
+ * "no LAN address known" than to guess.
+ */
+export function isLanReachableHost(hostname: string): boolean {
+  const host = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  if (isHostMachineAlias(host)) return false;
+  if (host.endsWith('.local')) return true;
+  const octets = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (octets) return octets.slice(1).every((part) => Number(part) <= 255);
+  return host.includes(':') && /^[0-9a-f:]+$/.test(host);
+}
+
+/** Facts about the runtime that decide how a base URL must be rewritten. */
+export interface ApiResolutionContext {
+  platform: string;
+  /** False on an emulator/simulator, where loopback aliases do exist. */
+  isPhysicalDevice: boolean;
+  devServerHost: string | null;
+}
+
+export function resolveApiContext(): ApiResolutionContext {
+  return {
+    platform: Platform.OS,
+    // Device.isDevice is false on emulators/simulators and true on handsets.
+    isPhysicalDevice: Device.isDevice !== false,
+    devServerHost: devServerHostname(),
+  };
+}
+
+/**
+ * Turn the configured URL into the URL this device can actually reach.
+ *
+ * The old rule was "any loopback URL on Android becomes 10.0.2.2". That is
+ * correct for the emulator and wrong everywhere else: on a physical handset
+ * `localhost` is the phone and `10.0.2.2` is a dead address, so the app could
+ * never reach the backend no matter that Metro was running fine.
+ *
+ * Now:
+ *   - a non-loopback URL (an explicit LAN/HTTPS address) is used verbatim;
+ *   - Android emulator: loopback -> 10.0.2.2 (unchanged behaviour);
+ *   - physical Android/iOS on a dev build: loopback -> the LAN host Metro is
+ *     already reachable at, keeping the configured backend port;
+ *   - otherwise the URL is left alone and the caller shows the honest
+ *     connection failure instead of inventing an address.
+ */
+export function resolveApiBaseUrl(
+  configured = configuredBaseUrl(),
+  context: ApiResolutionContext = resolveApiContext(),
+): string {
+  const url = configured.trim().replace(/\/+$/, '');
+  let parsed: URL;
   try {
-    const parsed = new URL(url);
-    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
-      parsed.hostname = '10.0.2.2';
-      return parsed.toString().replace(/\/+$/, '');
-    }
+    parsed = new URL(url);
   } catch {
-    // not a parseable URL — return as-is
+    return url;
   }
-  return url;
+  if (!isHostMachineAlias(parsed.hostname)) return url;
+
+  const host = context.devServerHost;
+  const lanHost = host && isLanReachableHost(host) ? host : null;
+
+  if (context.platform === 'android') {
+    parsed.hostname = context.isPhysicalDevice ? (lanHost ?? parsed.hostname) : ANDROID_EMULATOR_HOST;
+  } else if (context.platform === 'ios' && context.isPhysicalDevice) {
+    if (lanHost) parsed.hostname = lanHost;
+  }
+  return parsed.toString().replace(/\/+$/, '');
+}
+
+/** What the app will call, and why — for the Settings and security screens. */
+export interface ApiTargetInfo {
+  baseUrl: string;
+  source: 'override' | 'config';
+  devServerHost: string | null;
+  /** Set when the resolved URL still cannot work from a phone. */
+  warning: string | null;
+}
+
+function targetWarning(baseUrl: string, context: ApiResolutionContext): string | null {
+  try {
+    if (!isHostMachineAlias(new URL(baseUrl).hostname)) return null;
+  } catch {
+    return null;
+  }
+  if (context.platform === 'web' || !context.isPhysicalDevice) return null;
+  return (
+    `This device is a physical phone, so "${baseUrl}" points at the phone itself, not at the ` +
+    'computer. Start Expo on the LAN (not --localhost/--tunnel) so the address can be derived ' +
+    `automatically, or set the computer's LAN URL (e.g. http://192.168.1.20:${DEFAULT_BACKEND_PORT}).`
+  );
+}
+
+export async function getApiTarget(): Promise<ApiTargetInfo> {
+  const override = await getSecureItem(API_URL_OVERRIDE_KEY);
+  const source: ApiTargetInfo['source'] = override ? 'override' : 'config';
+  const context = resolveApiContext();
+  const baseUrl = resolveApiBaseUrl(override ?? configuredBaseUrl(), context);
+  return {
+    baseUrl,
+    source,
+    devServerHost: context.devServerHost,
+    warning: targetWarning(baseUrl, context),
+  };
 }
 
 export async function getApiBaseUrl(): Promise<string> {
-  const override = await getSecureItem(API_URL_OVERRIDE_KEY);
-  return resolveApiBaseUrl(override ?? configuredBaseUrl());
+  return (await getApiTarget()).baseUrl;
 }
 
 export async function setApiBaseUrlOverride(value: string | null): Promise<void> {

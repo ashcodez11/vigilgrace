@@ -3,15 +3,16 @@
  * backend URL override, theme switcher, plus navigation to sub-screens.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuthStore } from '@/state/auth-store';
 import { useSettingsStore } from '@/state/settings-store';
-import { getApiBaseUrl, setApiBaseUrlOverride } from '@/services/api';
+import { getApiTarget, setApiBaseUrlOverride, type ApiTargetInfo } from '@/services/api';
+import { healthCheck } from '@/services/backend';
 import { AppButton, Banner, Card, Field, Screen, ToggleRow } from '@/ui/components';
-import { useTheme } from '@/ui/theme-context';
+import { themes, useTheme, type ThemeId } from '@/ui/theme-context';
 import { spacing } from '@/ui/theme';
 
 export default function SettingsScreen() {
@@ -21,11 +22,55 @@ export default function SettingsScreen() {
   const logout = useAuthStore((s) => s.logout);
   const [apiOverride, setApiOverride] = useState('');
   const [apiStatus, setApiStatus] = useState<string | null>(null);
+  const [apiTarget, setApiTarget] = useState<ApiTargetInfo | null>(null);
+  const [testing, setTesting] = useState(false);
+
+  const refreshApiTarget = async () => {
+    try {
+      setApiTarget(await getApiTarget());
+    } catch {
+      setApiTarget(null);
+    }
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    void (async () => {
+      try {
+        const target = await getApiTarget();
+        if (mounted) setApiTarget(target);
+      } catch {
+        if (mounted) setApiTarget(null);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const saveApiOverride = async () => {
     await setApiBaseUrlOverride(apiOverride.trim() ? apiOverride.trim() : null);
-    const url = await getApiBaseUrl();
-    setApiStatus(`Active backend: ${url}`);
+    await refreshApiTarget();
+    setApiStatus('Saved. The next request uses the address shown above.');
+  };
+
+  const testConnection = async () => {
+    setTesting(true);
+    setApiStatus(null);
+    try {
+      const health = await healthCheck();
+      const sms =
+        health.smsProvider === 'unknown'
+          ? 'SMS provider NOT configured (verification codes are refused with HTTP 503)'
+          : `SMS provider: ${health.smsProvider ?? 'unknown'}`;
+      setApiStatus(`Reachable — ${health.name} v${health.version}. ${sms}.`);
+    } catch (err) {
+      // The client already explains what to do; show it verbatim.
+      setApiStatus(err instanceof Error ? err.message : String(err));
+    } finally {
+      setTesting(false);
+      void refreshApiTarget();
+    }
   };
 
   return (
@@ -33,45 +78,27 @@ export default function SettingsScreen() {
       <Card>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Appearance</Text>
         <View style={styles.themeRow}>
-          <Pressable
-            style={[
-              styles.themeButton,
-              {
-                backgroundColor: themeId === 'gothic-noir' ? colors.primary : colors.surfaceAlt,
-                borderColor: themeId === 'gothic-noir' ? colors.primary : colors.border,
-              },
-            ]}
-            onPress={() => setThemeId('gothic-noir')}
-          >
-            <Text
+          {(Object.keys(themes) as ThemeId[]).map((id) => (
+            <Pressable
+              key={id}
+              accessibilityRole="button"
+              accessibilityState={{ selected: themeId === id }}
               style={[
-                styles.themeButtonText,
-                { color: themeId === 'gothic-noir' ? colors.primaryText : colors.text },
+                styles.themeButton,
+                {
+                  backgroundColor: themeId === id ? colors.primary : colors.surfaceAlt,
+                  borderColor: themeId === id ? colors.primary : colors.border,
+                },
               ]}
+              onPress={() => setThemeId(id)}
             >
-              Gothic Noir
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.themeButton,
-              {
-                backgroundColor: themeId === 'soft-girl' ? colors.primary : colors.surfaceAlt,
-                borderColor: themeId === 'soft-girl' ? colors.primary : colors.border,
-              },
-            ]}
-            onPress={() => setThemeId('soft-girl')}
-          >
-            <Text
-              style={[
-                styles.themeButtonText,
-                { color: themeId === 'soft-girl' ? colors.primaryText : colors.text },
-              ]}
-            >
-              Soft Girl
-            </Text>
-          </Pressable>
+              <Text style={[styles.themeButtonText, { color: themeId === id ? colors.primaryText : colors.text }]}>
+                {themes[id].name}
+              </Text>
+            </Pressable>
+          ))}
         </View>
+        <AppButton label="Design system preview" variant="ghost" onPress={() => router.push('/(app)/design-system')} />
       </Card>
 
       <Card>
@@ -141,17 +168,39 @@ export default function SettingsScreen() {
       <Card>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Backend</Text>
         <Text style={[styles.hint, { color: colors.textMuted }]}>
-          Leave empty to use the configured default. Use http://10.0.2.2:4001 for the Android
-          emulator. Production deployments must use HTTPS.
+          Leave empty to use the configured default. On a development build the LAN address of the
+          computer is derived automatically from the Expo dev server; the Android emulator uses
+          http://10.0.2.2:4001. A physical phone needs the LAN address of the computer (for example
+          http://192.168.1.20:4001) and must be on the same Wi-Fi. Production must use HTTPS.
         </Text>
+        {apiTarget ? (
+          <Text style={[styles.status, { color: colors.info }]}>
+            Active: {apiTarget.baseUrl} ({apiTarget.source === 'override' ? 'Settings override' : 'app config'})
+            {apiTarget.devServerHost ? ` · dev server host ${apiTarget.devServerHost}` : ''}
+          </Text>
+        ) : null}
+        {apiTarget?.warning ? (
+          <Banner tone="warning" title="This address cannot reach the computer">
+            {apiTarget.warning}
+          </Banner>
+        ) : null}
         <Field
           label="Backend base URL override"
           value={apiOverride}
           onChangeText={setApiOverride}
           autoCapitalize="none"
-          placeholder="https://api.example.com"
+          placeholder="http://192.168.1.20:4001"
         />
-        <AppButton label="Save & show active URL" variant="secondary" onPress={() => void saveApiOverride()} />
+        <View style={styles.linkRow}>
+          <AppButton label="Save" variant="secondary" onPress={() => void saveApiOverride()} style={styles.flex} />
+          <AppButton
+            label="Test connection"
+            variant="ghost"
+            loading={testing}
+            onPress={() => void testConnection()}
+            style={styles.flex}
+          />
+        </View>
         {apiStatus ? <Text style={[styles.status, { color: colors.info }]}>{apiStatus}</Text> : null}
       </Card>
 
@@ -173,7 +222,7 @@ const styles = StyleSheet.create({
   stepperRow: { flexDirection: 'row', gap: spacing.sm },
   linkRow: { flexDirection: 'row', gap: spacing.sm },
   flex: { flex: 1 },
-  themeRow: { flexDirection: 'row', gap: spacing.md },
+  themeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   themeButton: {
     flex: 1,
     paddingVertical: 16,

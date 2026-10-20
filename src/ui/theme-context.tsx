@@ -7,12 +7,15 @@ import { createContext, useContext, type ReactNode } from 'react';
 
 import { gothicNoirTheme, type Theme, type ThemeId } from './themes/gothic-noir';
 import { softGirlTheme } from './themes/soft-girl';
+import { blackCherryTheme, ivoryRoseTheme } from './themes/vigil-reference';
 
 export type { ThemeId, Theme };
 
 export const themes: Record<ThemeId, Theme> = {
   'gothic-noir': gothicNoirTheme,
   'soft-girl': softGirlTheme,
+  'ivory-rose': ivoryRoseTheme,
+  'black-cherry': blackCherryTheme,
 };
 
 interface ThemeContextValue {

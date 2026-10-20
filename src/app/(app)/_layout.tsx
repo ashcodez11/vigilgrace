@@ -26,6 +26,7 @@ export default function AppLayout() {
       <Stack.Screen name="voice" options={{ title: '' }} />
       <Stack.Screen name="security" options={{ title: '' }} />
       <Stack.Screen name="profile" options={{ title: '' }} />
+      <Stack.Screen name="design-system" options={{ title: '' }} />
     </Stack>
   );
 }

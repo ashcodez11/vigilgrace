@@ -1,0 +1,14 @@
+
+> vigilgrace@1.0.0 backend:start
+> npm --prefix backend/server run start
+
+
+> vigilgrace-backend@1.0.0 start
+> node src/index.js
+
+VigilGrace backend listening on http://0.0.0.0:4001
+Local health check: http://127.0.0.1:4001/health
+LAN (phone) base URL: http://192.168.1.2:4001
+Ignoring PORT="0" (must be 1-65535); using 4001 because the app expects a fixed port.
+Data file: /Users/apple/women-safety/backend/server/data/db.json
+SMS provider: NOT CONFIGURED — verification requests are refused with HTTP 503 instead of pretending a code was sent.

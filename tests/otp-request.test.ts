@@ -24,6 +24,7 @@ vi.mock('react-native', () => ({ Platform: { OS: 'web' } }));
 vi.mock('expo-constants', () => ({
   default: { expoConfig: { extra: { apiBaseUrl: 'http://127.0.0.1:4001' } } },
 }));
+vi.mock('expo-device', () => ({ isDevice: true }));
 vi.mock('expo-secure-store', () => ({
   getItemAsync: async () => null,
   setItemAsync: async () => undefined,

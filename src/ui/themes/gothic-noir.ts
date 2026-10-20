@@ -3,11 +3,15 @@
  * muted silver and ivory, elegant typography with subtle botanical detailing.
  */
 
-export type ThemeId = 'gothic-noir' | 'soft-girl';
+import type { SemanticTokens } from '../tokens/semantic';
+
+export type ThemeId = 'gothic-noir' | 'soft-girl' | 'ivory-rose' | 'black-cherry';
 
 export interface Theme {
   id: ThemeId;
   name: string;
+  /** Present on the reference-palette themes; components fall back to colors otherwise. */
+  semantic?: SemanticTokens;
   colors: {
     background: string;
     surface: string;

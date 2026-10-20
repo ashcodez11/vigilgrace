@@ -11,31 +11,66 @@
  * unhandled rejection (a red screen on web, a crash report on a device).
  */
 
-import * as Notifications from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
+
+type NotificationsModule = typeof import('expo-notifications');
 
 const IS_WEB = Platform.OS === 'web';
 
-if (!IS_WEB) {
-  try {
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
-    });
-  } catch {
-    // Handler registration is best-effort.
+/**
+ * Expo Go (StoreClient) on Android SDK 53+ no longer ships expo-notifications
+ * support, and merely importing the package there errors. It is therefore
+ * loaded lazily and never evaluated in Expo Go. Dev and production builds
+ * (bare / standalone) are unaffected.
+ */
+const IS_EXPO_GO = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const UNSUPPORTED = IS_WEB || (IS_EXPO_GO && Platform.OS === 'android');
+
+let cached: NotificationsModule | null | undefined;
+let warned = false;
+
+function getNotifications(): NotificationsModule | null {
+  if (UNSUPPORTED) {
+    if (__DEV__ && !warned && !IS_WEB) {
+      warned = true;
+      console.warn(
+        '[VigilGrace] Notifications disabled: expo-notifications is unavailable in Expo Go on Android. ' +
+          'Use a development build to test them. SOS alerts are unaffected.',
+      );
+    }
+    return null;
   }
+  if (cached !== undefined) return cached;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require('expo-notifications') as NotificationsModule;
+    try {
+      mod.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+        }),
+      });
+    } catch {
+      // Handler registration is best-effort.
+    }
+    cached = mod;
+  } catch {
+    cached = null;
+  }
+  return cached;
 }
 
 const ANDROID_CHANNEL_ID = 'sos';
 let androidChannelReady = false;
 
 async function ensureAndroidChannel(): Promise<void> {
-  if (IS_WEB || Platform.OS !== 'android' || androidChannelReady) return;
+  if (Platform.OS !== 'android' || androidChannelReady) return;
+  const Notifications = getNotifications();
+  if (!Notifications) return;
   try {
     await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
       name: 'Emergency alerts',
@@ -50,7 +85,8 @@ async function ensureAndroidChannel(): Promise<void> {
 }
 
 export async function ensureNotificationPermission(): Promise<boolean> {
-  if (IS_WEB) return false;
+  const Notifications = getNotifications();
+  if (!Notifications) return false;
   try {
     await ensureAndroidChannel();
     const current = await Notifications.getPermissionsAsync();
@@ -67,7 +103,8 @@ export interface NotifyOptions {
 }
 
 export async function notify(title: string, body: string, options: NotifyOptions = {}): Promise<void> {
-  if (IS_WEB) return;
+  const Notifications = getNotifications();
+  if (!Notifications) return;
   try {
     const granted = await ensureNotificationPermission();
     if (!granted) return;

@@ -54,9 +54,22 @@ npm run web          # preview in a browser
 npx expo run:android # development build for device testing
 ```
 
-The app talks to `http://localhost:4001` by default (`10.0.2.2:4001` on an
-Android emulator). Override with `EXPO_PUBLIC_API_URL`, `extra.apiBaseUrl`, or
-the in-app Settings → Backend field.
+The app talks to the backend on port 4001. How that address is chosen:
+
+| Runtime | Loopback config (`localhost:4001`) becomes |
+|---|---|
+| Android emulator | `http://10.0.2.2:4001` (the emulator's host alias) |
+| Physical Android/iOS on a development build | the LAN host the Expo dev server reports, e.g. `http://192.168.1.2:4001` |
+| iOS simulator / web | `http://localhost:4001` unchanged |
+
+A physical phone cannot reach the computer through `localhost` or `10.0.2.2`.
+Start Expo on the LAN (the default; not `--localhost` or `--tunnel`) and the
+address is derived automatically. To pin it explicitly, set
+`EXPO_PUBLIC_API_URL` / `extra.apiBaseUrl` / `config/local.config.json`, or use
+Settings → Backend (a "Test connection" button reports what actually answered).
+
+Debug Android builds allow cleartext HTTP (`android/app/src/debug`); a release
+or EAS preview APK does not, so point that build at an HTTPS backend.
 
 Never commit `config/local.config.json`, `backend/server/.env`,
 `backend/server/data/`, signing keys, or real contact numbers.
