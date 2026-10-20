@@ -98,8 +98,17 @@ export function verifyContact(token: string, id: string, code: string): Promise<
 export function submitAlertEnvelope(
   token: string,
   envelope: SealedEnvelope,
-): Promise<{ accepted: true; report: AlertDeliveryReport; duplicate: boolean }> {
-  return apiFetch('/alerts', { method: 'POST', token, body: { envelope } });
+): Promise<{ accepted: true; report: AlertDeliveryReport; duplicate: boolean; retried?: boolean }> {
+  // The server messages every verified contact before answering, so this one
+  // gets a longer ceiling than ordinary calls — but a ceiling all the same. An
+  // unbounded request used to leave the SOS screen on "Sending…" with no way
+  // to retry while a socket hung.
+  return apiFetch('/alerts', {
+    method: 'POST',
+    token,
+    body: { envelope },
+    timeoutMs: 20_000,
+  });
 }
 
 export interface AlertSummary {

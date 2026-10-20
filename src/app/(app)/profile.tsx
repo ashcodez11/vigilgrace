@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 
 import { checkLocationPermission, requestLocationPermission } from '@/services/location';
@@ -14,14 +14,17 @@ import { useContactsStore } from '@/state/contacts-store';
 import { AppButton, Badge, Banner, Card, Row, Screen } from '@/ui/components';
 import { colors, spacing } from '@/ui/theme';
 
+/**
+ * Open this app's own settings page.
+ *
+ * The previous Android branch built a `package:` data URI from
+ * `Platform.constants.ApplicationId`, which does not exist in React Native — so
+ * the intent was sent with `package:vigilgrace` and opened nothing useful.
+ * `Linking.openSettings()` is the supported, platform-agnostic way to reach the
+ * app's permission settings.
+ */
 function openSettings() {
-  if (Platform.OS === 'ios') {
-    void Linking.openURL('app-settings:');
-  } else {
-    void Linking.sendIntent('android.settings.APPLICATION_DETAILS_SETTINGS', {
-      data: `package:${Platform.constants?.ApplicationId ?? 'vigilgrace'}`,
-    });
-  }
+  void Linking.openSettings();
 }
 
 export default function ProfileScreen() {
@@ -52,7 +55,8 @@ export default function ProfileScreen() {
         <Text style={styles.sectionTitle}>Account</Text>
         <Row label="Name" value={user?.name ?? '—'} />
         <Row label="User ID" value={user?.id ?? '—'} />
-        <Row label="Phone" value={user?.phone ?? '—'} />
+        {/* Accounts are email + password only; there is no phone on the profile. */}
+        <Row label="Email" value={user?.email ?? '—'} />
         <Row label="Contacts" value={`${contacts.length} (${verifiedCount} verified)`} />
         <AppButton label="Sign out" variant="danger" onPress={() => void logout()} />
       </Card>
@@ -111,19 +115,19 @@ export default function ProfileScreen() {
         <Row label="Manual SOS + countdown" value="implemented" />
         <Row label="PQC envelope (ML-KEM/ML-DSA)" value="implemented + tested" />
         <Row label="Contacts + verification flow" value="implemented" />
-        <Row label="Shake / voice / pendant triggers" value="foreground-only; pendant hardware untested" />
+        <Row label="Shake / voice triggers" value="foreground-only; device sensors untested" />
         <Row label="Evidence recording" value="consent + digest; on-device only" />
         <Row label="Delivery" value="mock mode labelled; Twilio via env config" />
         <AppButton
           label="Back to safety dashboard"
           variant="secondary"
-          onPress={() => router.replace('/(app)')}
+          onPress={() => router.replace('/')}
         />
       </Card>
 
-      <Banner tone="warning" title="Development build reminder">
-        Bluetooth pendant support requires a development build. Shake and voice monitoring work in
-        Expo Go but only while the app is foregrounded.
+      <Banner tone="warning" title="Foreground-only monitoring">
+        Shake and voice monitoring stop when VigilGrace is backgrounded or killed. There is no
+        notification listener, lock-screen or hardware-button trigger.
       </Banner>
     </Screen>
   );

@@ -1,0 +1,835 @@
+{
+  "assets": {
+    "esc50.csv": "ca660da60191a97de289983a05821c9382d852a38a2ba8428980816b68cf6246",
+    "yamnet_class_map.csv": "cdf24d193e196d9e95912a2667051ae203e92a2ba09449218ccb40ef787c6df2",
+    "yamnet_classification.tflite": "10c95ea3eb9a7bb4cb8bddf6feb023250381008177ac162ce169694d05c317de"
+  },
+  "dataset": {
+    "categories": 50,
+    "class_balance": {
+      "crying_baby": 40,
+      "other": 1960
+    },
+    "clips": 2000,
+    "license": "CC BY-NC 3.0 (audio, not redistributed)",
+    "manifest_sha256": "0579d057bcbf7c44e145e7033179565b42c31a70a443a1349abdbfb322bc864e",
+    "name": "ESC-50"
+  },
+  "environment": {
+    "machine": "x86_64",
+    "numpy": "1.26.4",
+    "platform": "macOS-15.7.9-x86_64-i386-64bit",
+    "python": "3.11.15"
+  },
+  "generated_at": "2026-10-18T12:25:25Z",
+  "task_a_infant_cry": {
+    "at_threshold": {
+      "accuracy": 0.994,
+      "confusion_matrix": {
+        "fn": 6,
+        "fp": 6,
+        "tn": 1954,
+        "tp": 34
+      },
+      "f1": 0.85,
+      "false_positive_rate": 0.0031,
+      "fn": 6,
+      "fp": 6,
+      "fpr_ci95": [
+        0.0014,
+        0.0067
+      ],
+      "precision": 0.85,
+      "recall": 0.85,
+      "recall_ci95": [
+        0.7093,
+        0.9294
+      ],
+      "specificity": 0.9969,
+      "threshold": 0.5,
+      "tn": 1954,
+      "tp": 34
+    },
+    "baseline_comparison": {
+      "high": {
+        "accuracy": 0.253,
+        "confusion_matrix": {
+          "fn": 0,
+          "fp": 1494,
+          "tn": 466,
+          "tp": 40
+        },
+        "f1": 0.0508,
+        "false_positive_rate": 0.7622,
+        "fn": 0,
+        "fp": 1494,
+        "precision": 0.0261,
+        "recall": 1.0,
+        "specificity": 0.2378,
+        "tn": 466,
+        "tp": 40
+      },
+      "low": {
+        "accuracy": 0.807,
+        "confusion_matrix": {
+          "fn": 29,
+          "fp": 357,
+          "tn": 1603,
+          "tp": 11
+        },
+        "f1": 0.0539,
+        "false_positive_rate": 0.1821,
+        "fn": 29,
+        "fp": 357,
+        "precision": 0.0299,
+        "recall": 0.275,
+        "specificity": 0.8179,
+        "tn": 1603,
+        "tp": 11
+      },
+      "medium": {
+        "accuracy": 0.514,
+        "confusion_matrix": {
+          "fn": 4,
+          "fp": 968,
+          "tn": 992,
+          "tp": 36
+        },
+        "f1": 0.069,
+        "false_positive_rate": 0.4939,
+        "fn": 4,
+        "fp": 968,
+        "precision": 0.0359,
+        "recall": 0.9,
+        "specificity": 0.5061,
+        "tn": 992,
+        "tp": 36
+      }
+    },
+    "negative_class": "49 other ESC-50 categories",
+    "per_fold": {
+      "1": {
+        "accuracy": 0.9875,
+        "confusion_matrix": {
+          "fn": 3,
+          "fp": 2,
+          "tn": 390,
+          "tp": 5
+        },
+        "f1": 0.6667,
+        "false_positive_rate": 0.0051,
+        "fn": 3,
+        "fp": 2,
+        "precision": 0.7143,
+        "recall": 0.625,
+        "specificity": 0.9949,
+        "tn": 390,
+        "tp": 5
+      },
+      "2": {
+        "accuracy": 1.0,
+        "confusion_matrix": {
+          "fn": 0,
+          "fp": 0,
+          "tn": 392,
+          "tp": 8
+        },
+        "f1": 1.0,
+        "false_positive_rate": 0.0,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "tn": 392,
+        "tp": 8
+      },
+      "3": {
+        "accuracy": 1.0,
+        "confusion_matrix": {
+          "fn": 0,
+          "fp": 0,
+          "tn": 392,
+          "tp": 8
+        },
+        "f1": 1.0,
+        "false_positive_rate": 0.0,
+        "fn": 0,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "tn": 392,
+        "tp": 8
+      },
+      "4": {
+        "accuracy": 0.9925,
+        "confusion_matrix": {
+          "fn": 1,
+          "fp": 2,
+          "tn": 390,
+          "tp": 7
+        },
+        "f1": 0.8235,
+        "false_positive_rate": 0.0051,
+        "fn": 1,
+        "fp": 2,
+        "precision": 0.7778,
+        "recall": 0.875,
+        "specificity": 0.9949,
+        "tn": 390,
+        "tp": 7
+      },
+      "5": {
+        "accuracy": 0.99,
+        "confusion_matrix": {
+          "fn": 2,
+          "fp": 2,
+          "tn": 390,
+          "tp": 6
+        },
+        "f1": 0.75,
+        "false_positive_rate": 0.0051,
+        "fn": 2,
+        "fp": 2,
+        "precision": 0.75,
+        "recall": 0.75,
+        "specificity": 0.9949,
+        "tn": 390,
+        "tp": 6
+      }
+    },
+    "positive_class": "ESC-50 crying_baby (infant crying)",
+    "sweep": [
+      {
+        "accuracy": 0.979,
+        "confusion_matrix": {
+          "fn": 0,
+          "fp": 42,
+          "tn": 1918,
+          "tp": 40
+        },
+        "f1": 0.6557,
+        "false_positive_rate": 0.0214,
+        "fn": 0,
+        "fp": 42,
+        "precision": 0.4878,
+        "recall": 1.0,
+        "specificity": 0.9786,
+        "threshold": 0.05,
+        "tn": 1918,
+        "tp": 40
+      },
+      {
+        "accuracy": 0.988,
+        "confusion_matrix": {
+          "fn": 0,
+          "fp": 24,
+          "tn": 1936,
+          "tp": 40
+        },
+        "f1": 0.7692,
+        "false_positive_rate": 0.0122,
+        "fn": 0,
+        "fp": 24,
+        "precision": 0.625,
+        "recall": 1.0,
+        "specificity": 0.9878,
+        "threshold": 0.1,
+        "tn": 1936,
+        "tp": 40
+      },
+      {
+        "accuracy": 0.993,
+        "confusion_matrix": {
+          "fn": 3,
+          "fp": 11,
+          "tn": 1949,
+          "tp": 37
+        },
+        "f1": 0.8409,
+        "false_positive_rate": 0.0056,
+        "fn": 3,
+        "fp": 11,
+        "precision": 0.7708,
+        "recall": 0.925,
+        "specificity": 0.9944,
+        "threshold": 0.2,
+        "tn": 1949,
+        "tp": 37
+      },
+      {
+        "accuracy": 0.9935,
+        "confusion_matrix": {
+          "fn": 4,
+          "fp": 9,
+          "tn": 1951,
+          "tp": 36
+        },
+        "f1": 0.8471,
+        "false_positive_rate": 0.0046,
+        "fn": 4,
+        "fp": 9,
+        "precision": 0.8,
+        "recall": 0.9,
+        "specificity": 0.9954,
+        "threshold": 0.3,
+        "tn": 1951,
+        "tp": 36
+      },
+      {
+        "accuracy": 0.9935,
+        "confusion_matrix": {
+          "fn": 6,
+          "fp": 7,
+          "tn": 1953,
+          "tp": 34
+        },
+        "f1": 0.8395,
+        "false_positive_rate": 0.0036,
+        "fn": 6,
+        "fp": 7,
+        "precision": 0.8293,
+        "recall": 0.85,
+        "specificity": 0.9964,
+        "threshold": 0.4,
+        "tn": 1953,
+        "tp": 34
+      },
+      {
+        "accuracy": 0.994,
+        "confusion_matrix": {
+          "fn": 6,
+          "fp": 6,
+          "tn": 1954,
+          "tp": 34
+        },
+        "f1": 0.85,
+        "false_positive_rate": 0.0031,
+        "fn": 6,
+        "fp": 6,
+        "precision": 0.85,
+        "recall": 0.85,
+        "specificity": 0.9969,
+        "threshold": 0.5,
+        "tn": 1954,
+        "tp": 34
+      },
+      {
+        "accuracy": 0.9935,
+        "confusion_matrix": {
+          "fn": 10,
+          "fp": 3,
+          "tn": 1957,
+          "tp": 30
+        },
+        "f1": 0.8219,
+        "false_positive_rate": 0.0015,
+        "fn": 10,
+        "fp": 3,
+        "precision": 0.9091,
+        "recall": 0.75,
+        "specificity": 0.9985,
+        "threshold": 0.6,
+        "tn": 1957,
+        "tp": 30
+      },
+      {
+        "accuracy": 0.994,
+        "confusion_matrix": {
+          "fn": 10,
+          "fp": 2,
+          "tn": 1958,
+          "tp": 30
+        },
+        "f1": 0.8333,
+        "false_positive_rate": 0.001,
+        "fn": 10,
+        "fp": 2,
+        "precision": 0.9375,
+        "recall": 0.75,
+        "specificity": 0.999,
+        "threshold": 0.7,
+        "tn": 1958,
+        "tp": 30
+      },
+      {
+        "accuracy": 0.9905,
+        "confusion_matrix": {
+          "fn": 17,
+          "fp": 2,
+          "tn": 1958,
+          "tp": 23
+        },
+        "f1": 0.7077,
+        "false_positive_rate": 0.001,
+        "fn": 17,
+        "fp": 2,
+        "precision": 0.92,
+        "recall": 0.575,
+        "specificity": 0.999,
+        "threshold": 0.8,
+        "tn": 1958,
+        "tp": 23
+      },
+      {
+        "accuracy": 0.986,
+        "confusion_matrix": {
+          "fn": 28,
+          "fp": 0,
+          "tn": 1960,
+          "tp": 12
+        },
+        "f1": 0.4615,
+        "false_positive_rate": 0.0,
+        "fn": 28,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 0.3,
+        "specificity": 1.0,
+        "threshold": 0.9,
+        "tn": 1960,
+        "tp": 12
+      },
+      {
+        "accuracy": 0.981,
+        "confusion_matrix": {
+          "fn": 38,
+          "fp": 0,
+          "tn": 1960,
+          "tp": 2
+        },
+        "f1": 0.0952,
+        "false_positive_rate": 0.0,
+        "fn": 38,
+        "fp": 0,
+        "precision": 1.0,
+        "recall": 0.05,
+        "specificity": 1.0,
+        "threshold": 0.95,
+        "tn": 1960,
+        "tp": 2
+      }
+    ]
+  },
+  "task_b_scream_alarm": {
+    "baseline_alarm_rate": {
+      "high": 0.7622,
+      "low": 0.1821,
+      "medium": 0.4939
+    },
+    "by_category": {
+      "airplane": {
+        "clips": 40,
+        "max_screaming": 0.0039,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "breathing": {
+        "clips": 40,
+        "max_screaming": 0.082,
+        "max_shout": 0.043,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "brushing_teeth": {
+        "clips": 40,
+        "max_screaming": 0.0312,
+        "max_shout": 0.0039,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "can_opening": {
+        "clips": 40,
+        "max_screaming": 0.0117,
+        "max_shout": 0.0078,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "car_horn": {
+        "clips": 40,
+        "max_screaming": 0.0312,
+        "max_shout": 0.0078,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "cat": {
+        "clips": 40,
+        "max_screaming": 0.1992,
+        "max_shout": 0.0312,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "chainsaw": {
+        "clips": 40,
+        "max_screaming": 0.0117,
+        "max_shout": 0.0039,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "chirping_birds": {
+        "clips": 40,
+        "max_screaming": 0.0156,
+        "max_shout": 0.0039,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "church_bells": {
+        "clips": 40,
+        "max_screaming": 0.0,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "clapping": {
+        "clips": 40,
+        "max_screaming": 0.0312,
+        "max_shout": 0.082,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "clock_alarm": {
+        "clips": 40,
+        "max_screaming": 0.0117,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "clock_tick": {
+        "clips": 40,
+        "max_screaming": 0.0117,
+        "max_shout": 0.0039,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "coughing": {
+        "clips": 40,
+        "max_screaming": 0.332,
+        "max_shout": 0.043,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "cow": {
+        "clips": 40,
+        "max_screaming": 0.082,
+        "max_shout": 0.0312,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "crackling_fire": {
+        "clips": 40,
+        "max_screaming": 0.0039,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "crickets": {
+        "clips": 40,
+        "max_screaming": 0.0117,
+        "max_shout": 0.0039,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "crow": {
+        "clips": 40,
+        "max_screaming": 0.2617,
+        "max_shout": 0.0312,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "dog": {
+        "clips": 40,
+        "max_screaming": 0.1094,
+        "max_shout": 0.082,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "door_wood_creaks": {
+        "clips": 40,
+        "max_screaming": 0.1484,
+        "max_shout": 0.0039,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "door_wood_knock": {
+        "clips": 40,
+        "max_screaming": 0.0039,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "drinking_sipping": {
+        "clips": 40,
+        "max_screaming": 0.043,
+        "max_shout": 0.0195,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "engine": {
+        "clips": 40,
+        "max_screaming": 0.0039,
+        "max_shout": 0.0039,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "fireworks": {
+        "clips": 40,
+        "max_screaming": 0.0195,
+        "max_shout": 0.0078,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "footsteps": {
+        "clips": 40,
+        "max_screaming": 0.0078,
+        "max_shout": 0.0039,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "frog": {
+        "clips": 40,
+        "max_screaming": 0.043,
+        "max_shout": 0.0039,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "glass_breaking": {
+        "clips": 40,
+        "max_screaming": 0.0039,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "hand_saw": {
+        "clips": 40,
+        "max_screaming": 0.043,
+        "max_shout": 0.043,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "helicopter": {
+        "clips": 40,
+        "max_screaming": 0.0078,
+        "max_shout": 0.0039,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "hen": {
+        "clips": 40,
+        "max_screaming": 0.1484,
+        "max_shout": 0.0312,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "insects": {
+        "clips": 40,
+        "max_screaming": 0.0078,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "keyboard_typing": {
+        "clips": 40,
+        "max_screaming": 0.0,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "laughing": {
+        "clips": 40,
+        "max_screaming": 0.668,
+        "max_shout": 0.0312,
+        "screaming_fpr@0.5": 0.025,
+        "screaming_fpr@0.7": 0.0
+      },
+      "mouse_click": {
+        "clips": 40,
+        "max_screaming": 0.0039,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "pig": {
+        "clips": 40,
+        "max_screaming": 0.1094,
+        "max_shout": 0.0117,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "pouring_water": {
+        "clips": 40,
+        "max_screaming": 0.0039,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "rain": {
+        "clips": 40,
+        "max_screaming": 0.0,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "rooster": {
+        "clips": 40,
+        "max_screaming": 0.1094,
+        "max_shout": 0.0195,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "sea_waves": {
+        "clips": 40,
+        "max_screaming": 0.0039,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "sheep": {
+        "clips": 40,
+        "max_screaming": 0.1094,
+        "max_shout": 0.0156,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "siren": {
+        "clips": 40,
+        "max_screaming": 0.0586,
+        "max_shout": 0.1484,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "sneezing": {
+        "clips": 40,
+        "max_screaming": 0.1992,
+        "max_shout": 0.0195,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "snoring": {
+        "clips": 40,
+        "max_screaming": 0.0156,
+        "max_shout": 0.0039,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "thunderstorm": {
+        "clips": 40,
+        "max_screaming": 0.0,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "toilet_flush": {
+        "clips": 40,
+        "max_screaming": 0.0,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "train": {
+        "clips": 40,
+        "max_screaming": 0.0039,
+        "max_shout": 0.0156,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "vacuum_cleaner": {
+        "clips": 40,
+        "max_screaming": 0.0312,
+        "max_shout": 0.1094,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "washing_machine": {
+        "clips": 40,
+        "max_screaming": 0.0039,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "water_drops": {
+        "clips": 40,
+        "max_screaming": 0.0039,
+        "max_shout": 0.0,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      },
+      "wind": {
+        "clips": 40,
+        "max_screaming": 0.0,
+        "max_shout": 0.0039,
+        "screaming_fpr@0.5": 0.0,
+        "screaming_fpr@0.7": 0.0
+      }
+    },
+    "either_scream_or_shout@0.5": 0.0005,
+    "either_scream_or_shout@0.7": 0.0,
+    "negatives": 1960,
+    "note": "ESC-50 contains no screams, so recall for screams is NOT measurable. These numbers are false-positive rates on everyday sounds.",
+    "screaming": {
+      "fpr@0.3": 0.0015,
+      "fpr@0.5": 0.0005,
+      "fpr@0.7": 0.0,
+      "fpr@0.9": 0.0
+    },
+    "shout": {
+      "fpr@0.3": 0.0,
+      "fpr@0.5": 0.0,
+      "fpr@0.7": 0.0,
+      "fpr@0.9": 0.0
+    }
+  },
+  "task_d_noise": {
+    "note": "synthetic additive white noise, not recorded babble/traffic; SNR set relative to clip RMS",
+    "results": {
+      "snr_10db": {
+        "accuracy": 0.908,
+        "confusion_matrix": {
+          "fn": 14,
+          "fp": 1,
+          "tn": 122,
+          "tp": 26
+        },
+        "f1": 0.7761,
+        "false_positive_rate": 0.0081,
+        "fn": 14,
+        "fp": 1,
+        "precision": 0.963,
+        "recall": 0.65,
+        "specificity": 0.9919,
+        "tn": 122,
+        "tp": 26
+      },
+      "snr_5db": {
+        "accuracy": 0.8344,
+        "confusion_matrix": {
+          "fn": 26,
+          "fp": 1,
+          "tn": 122,
+          "tp": 14
+        },
+        "f1": 0.5091,
+        "false_positive_rate": 0.0081,
+        "fn": 26,
+        "fp": 1,
+        "precision": 0.9333,
+        "recall": 0.35,
+        "specificity": 0.9919,
+        "tn": 122,
+        "tp": 14
+      }
+    },
+    "subset_size": 163
+  },
+  "task_e_latency": {
+    "machine": "x86_64",
+    "model_bytes": 4126810,
+    "note": "desktop CPU with XNNPACK; phone latency was not measured",
+    "per_window_ms": {
+      "max": 3.28,
+      "median": 2.59,
+      "p95": 3.27
+    }
+  }
+}

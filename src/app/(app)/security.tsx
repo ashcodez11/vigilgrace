@@ -10,11 +10,12 @@ import { toBase64 } from '@/core/crypto/bytes';
 import { sealAlertEnvelope, verifyEnvelopeSignature } from '@/core/crypto/envelope';
 import { hashBytes } from '@/core/crypto/pqc';
 import type { EmergencyAlertPayload } from '@/core/types';
+import { getApiBaseUrl } from '@/services/api';
 import { loadOrCreateIdentity, getCachedServerKeys, type Identity } from '@/services/identity-keys';
 import { cryptoRandom } from '@/services/random';
 import { useAuthStore } from '@/state/auth-store';
 import { AppButton, Badge, Banner, Card, LoadingView, Row, Screen } from '@/ui/components';
-import { colors, spacing } from '@/ui/theme';
+import { colors } from '@/ui/theme';
 
 function fingerprint(publicKey: Uint8Array): string {
   const digest = hashBytes(publicKey);
@@ -24,6 +25,7 @@ function fingerprint(publicKey: Uint8Array): string {
 
 export default function SecurityScreen() {
   const user = useAuthStore((s) => s.user);
+  const userId = user?.id ?? 'self-test';
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [serverKeys, setServerKeys] = useState<Awaited<ReturnType<typeof getCachedServerKeys>>>(null);
   const [selfTest, setSelfTest] = useState<string | null>(null);
@@ -33,7 +35,11 @@ export default function SecurityScreen() {
     let mounted = true;
     void (async () => {
       const id = await loadOrCreateIdentity();
-      const keys = await getCachedServerKeys();
+      // Look up the cache for the backend actually in use: the same call with no
+      // URL returns keys for whichever server was cached last, which would make
+      // this screen display another backend's fingerprints.
+      const baseUrl = await getApiBaseUrl();
+      const keys = await getCachedServerKeys(baseUrl);
       if (!mounted) return;
       setIdentity(id);
       setServerKeys(keys);
@@ -53,7 +59,7 @@ export default function SecurityScreen() {
       // without contacting the backend.
       const payload: EmergencyAlertPayload = {
         alertId: `self-test-${Date.now()}`,
-        userId: user?.id ?? 'self-test',
+        userId,
         trigger: 'manual',
         createdAt: new Date().toISOString(),
         location: null,
@@ -77,7 +83,7 @@ export default function SecurityScreen() {
     } finally {
       setBusy(false);
     }
-  }, [identity]);
+  }, [identity, userId]);
 
   if (!identity) return <LoadingView text="Loading post-quantum identity…" />;
 
@@ -108,8 +114,9 @@ export default function SecurityScreen() {
             <Row label="DSA fingerprint" value={fingerprint(base64ToBytes(serverKeys.sigPublicKeyB64))} />
             <Row label="Fetched" value={new Date(serverKeys.fetchedAt).toLocaleString()} />
             <Text style={styles.note}>
-              Alerts are sealed to the server KEM key over TLS. The cache is pinned at first fetch;
-              a mismatch after re-deployment requires clearing it (sign out and in again).
+              Alerts are sealed to the server KEM key over TLS. The cache is keyed to the backend
+              URL, so pointing the app at a different server re-fetches its keys automatically —
+              alerts sealed to one backend cannot be opened by another.
             </Text>
           </>
         ) : (

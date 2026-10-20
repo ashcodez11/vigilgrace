@@ -7,7 +7,7 @@
  * attached to the emergency record (uploaded: false).
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,
@@ -26,6 +26,10 @@ export function useEvidenceRecorder() {
   const recorder = useAudioRecorder(RecordingPresets.LOW_QUALITY);
   const [recording, setRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The ref is the source of truth for stop(): React state can lag one render
+  // behind start(), and a cancelled-then-confirmed SOS used to return null and
+  // silently drop the evidence clip for exactly that reason.
+  const recordingRef = useRef(false);
 
   const start = useCallback(async (): Promise<boolean> => {
     try {
@@ -38,17 +42,20 @@ export function useEvidenceRecorder() {
       await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
       await recorder.prepareToRecordAsync();
       recorder.record({ forDuration: 30 });
+      recordingRef.current = true;
       setRecording(true);
       return true;
     } catch (err) {
       setError((err as Error).message);
+      recordingRef.current = false;
       setRecording(false);
       return false;
     }
   }, [recorder]);
 
   const stop = useCallback(async (): Promise<EvidenceClip | null> => {
-    if (!recording) return null;
+    if (!recordingRef.current) return null;
+    recordingRef.current = false;
     try {
       await recorder.stop();
     } catch (err) {
@@ -67,7 +74,7 @@ export function useEvidenceRecorder() {
       setError((err as Error).message);
       return null;
     }
-  }, [recorder, recording]);
+  }, [recorder]);
 
   return { recording, error, start, stop };
 }

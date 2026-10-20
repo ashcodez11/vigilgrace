@@ -121,7 +121,10 @@ export function AppButton({
           : variant === 'secondary'
             ? colors.surfaceAlt
             : 'transparent';
-  const textColor = variant === 'ghost' ? colors.primary : colors.primaryText;
+  // Ghost buttons are transparent, so their label sits on the card surface.
+  // `colors.primary` as text only reaches ~2.6:1 on the Soft Girl background;
+  // the theme's text colour keeps the tinted border while staying readable.
+  const textColor = variant === 'ghost' ? colors.text : colors.primaryText;
 
   return (
     <Pressable

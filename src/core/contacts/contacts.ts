@@ -6,7 +6,7 @@ import type { ContactSeed, EmergencyContact } from '../types';
 
 export interface PhoneValidation {
   valid: boolean;
-  /** E.164-style normalized number, e.g. +919066384152 */
+  /** E.164-style normalized number, e.g. +919000000001 */
   normalized: string;
   error?: string;
 }

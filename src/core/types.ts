@@ -4,7 +4,7 @@
  * unit-tested in Node (vitest) and reused by tooling.
  */
 
-export type SosTriggerSource = 'manual' | 'shake' | 'voice' | 'pendant' | 'test';
+export type SosTriggerSource = 'manual' | 'shake' | 'voice' | 'test';
 
 export type SosStatus =
   | 'idle'
@@ -83,7 +83,7 @@ export interface EvidenceMetadata {
   id: string;
   kind: 'audio' | 'location-snapshot' | 'note';
   createdAt: string;
-  /** sha256 hex digest of the evidence artifact. */
+  /** SHA-256 digest of the evidence artifact (base64; legacy hex also accepted). */
   sha256: string;
   /** Local file URI (app-private storage) when applicable. */
   localUri?: string;

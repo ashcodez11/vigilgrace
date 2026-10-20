@@ -1,56 +1,88 @@
-# Welcome to your Expo app 👋
+# VigilGrace — Women Safety Communication System
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo (SDK 57) / React Native app with a small Node.js backend. The app raises a
+cancellable SOS, seals the alert with post-quantum cryptography, has the backend
+message **verified** emergency contacts, and records per-contact delivery
+results the UI reports honestly.
 
-## Get started
+## What is implemented
 
-1. Install dependencies
+| Area | Status |
+| --- | --- |
+| Manual SOS with countdown / cancel / send-now, retry with backoff | Implemented, unit + e2e tested |
+| Sealed alert envelope (ML-KEM-768 → HKDF → AES-256-GCM, ML-DSA-65 signature) | Implemented, tested |
+| Backend alert intake, signature/key/owner checks, idempotent `alertId` | Implemented, backend tested |
+| Retry of a **recorded** failed alert (re-attempts only unreached contacts) | Implemented, backend tested |
+| Emergency contacts CRUD + OTP verification; only verified contacts are alerted | Implemented, backend tested |
+| SMS providers: `mock` (dev only), `twilio`, `webhook` | Implemented; **mock only** exercised here |
+| Shake-to-SOS (foreground only, cooldown + debounce) | Implemented, detector tested; device sensor untested this round |
+| Voice-distress acoustic prototype (foreground only, corroboration required by default) | Prototype, analyzer tested |
+| Evidence metadata (SHA-256 digests, audio stays on device) | Implemented, tested |
+| Dual themes, tab navigation, history, security status | Implemented |
 
-   ```bash
-   npm install
-   ```
+### Explicitly not claimed
 
-2. Start the app
+- No background, lock-screen or power-button activation. Accelerometer and
+  microphone monitoring stop when the app is backgrounded.
+- No wearable or Bluetooth trigger. The earlier BLE pendant experiment was
+  removed on 2026-10-18; there is no pairing UI, BLE permission or pendant
+  route in the app.
+- No end-to-end encryption against the backend: the server must decrypt an
+  alert to send SMS, so it is inside the trust boundary.
+- Hashes prove integrity, not authorship; authenticity comes from the ML-DSA
+  signature on the sealed envelope.
+- Mock delivery sends nothing. A "SIMULATED" result is not evidence a message
+  reached a person.
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Setup
 
 ```bash
-npm run reset-project
+npm install
+npm --prefix backend/server install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Backend (mock SMS, dev only):
 
-### Other setup steps
+```bash
+VIGILGRACE_SMS_PROVIDER=mock VIGILGRACE_ALLOW_MOCK=1 PORT=4001 npm run backend:start
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+App:
 
-## Learn more
+```bash
+npm run web          # preview in a browser
+npx expo run:android # development build for device testing
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+The app talks to `http://localhost:4001` by default (`10.0.2.2:4001` on an
+Android emulator). Override with `EXPO_PUBLIC_API_URL`, `extra.apiBaseUrl`, or
+the in-app Settings → Backend field.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Never commit `config/local.config.json`, `backend/server/.env`,
+`backend/server/data/`, signing keys, or real contact numbers.
 
-## Join the community
+## Verification
 
-Join our community of developers creating universal apps.
+```bash
+npm run typecheck    # tsc --noEmit
+npm run lint         # expo lint
+npm test             # client unit + e2e (spawns a real backend on loopback)
+npm run backend:test # backend node --test
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+`tests/sos-alert-e2e.test.ts` drives the real HTTP client, envelope sealing and
+`dispatchSos` against a real backend process in mock provider mode. It never
+sends a real message.
+
+## Screenshots
+
+`docs/preview/` contains captures of the SOS countdown, cancellation, simulated
+success, honest failure, contact verified/unverified/pending states, history,
+trigger screens and settings. All contacts there are placeholders
+(`+9190000000xx`).
+
+## Deeper docs
+
+- `docs/AGENT_HANDOFF.md` — architecture and prior design notes
+- `docs/OTP_DELIVERY_DIAGNOSIS_2026-10-16.md` — verification-code delivery fix
+- `docs/SAFETY_FEATURE_UPDATE_2026-10-18.md` — safety feature audit and fixes

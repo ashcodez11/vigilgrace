@@ -95,14 +95,14 @@ Settings screen includes an "Appearance" section at the top with theme toggle bu
 #### Testing & Verification
 
 **Type Safety**
-- Baseline errors: 14 (in pendant, profile, voice, evidence, sos-service modules)
+- Baseline errors: 14 (in profile, voice, evidence, sos-service modules)
 - Current errors: 16 (baseline + 2 app.config/index minor issues)
 - **Verified: No theme-related type errors introduced**
 - All theme-related type issues from initial implementation were resolved
 
 **Lint Status**
 - 22 total issues (11 errors, 11 warnings)
-- All pre-existing in BLE service, voice monitor, and identity keys
+- All pre-existing in the voice monitor and identity keys
 - No new lint issues introduced by theme work
 
 **Functionality Verified**
@@ -115,7 +115,6 @@ Settings screen includes an "Appearance" section at the top with theme toggle bu
 
 **Pre-existing Issues Confirmed** (via git stash baseline check)
 - app.config.ts: newArchEnabled type issue
-- pendant.tsx: maxGapMs property missing from type
 - profile.tsx: ApplicationId and phone property issues
 - voice.tsx: reason property missing from VoiceLogEntry
 - evidence files: sha256 type conflicts
@@ -149,7 +148,10 @@ None of these are related to theme implementation.
 - ✅ Evidence recording with integrity verification
 - ✅ Shake-to-SOS detection (foreground)
 - ✅ Voice distress monitoring (prototype)
-- ✅ BLE pendant integration
+
+> **Change (2026-10-18): the Bluetooth pendant was removed entirely** — screen,
+> store, BLE service, HMAC contract, tests, dependency, plugins, permissions and
+> documentation. No wearable or Bluetooth trigger exists in the app.
 
 ### Design Quality Verification
 
@@ -169,14 +171,12 @@ None of these are related to theme implementation.
 ### Known Issues (Pre-existing, Verified)
 
 1. **Type errors** (14 baseline, 0 introduced by theme work):
-   - pendant.tsx: DoublePressConfig interface incomplete
    - profile.tsx: Platform constants type issues
    - voice.tsx: VoiceLogEntry interface incomplete
    - evidence/integrity: EvidenceMetadata type conflicts
    - sos-service: Backend module export issue
 
 2. **ESLint** (22 issues, 0 introduced):
-   - BLE service: array type preference, unused disable directive
    - Identity keys: unused function exports
    - Voice monitor: setState in effect, refs not in deps
 
@@ -189,7 +189,7 @@ None of these are related to theme implementation.
 1. ~~Fix theme contrast and touch targets~~ ✅ **COMPLETED**
 2. ~~Refine Gothic Noir to be elegant, not horror-themed~~ ✅ **COMPLETED**
 3. ~~Polish Soft Girl to be feminine, not childish~~ ✅ **COMPLETED**
-4. Fix pre-existing TypeScript errors in pendant, profile, voice modules
+4. Fix pre-existing TypeScript errors in profile and voice modules
 5. Address React hooks ESLint violations in voice monitor
 6. Clean up unused identity key functions
 7. Test on physical devices for color accuracy and touch responsiveness

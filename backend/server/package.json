@@ -1,0 +1,14 @@
+{
+  "name": "vigilgrace-backend",
+  "private": true,
+  "version": "1.0.0",
+  "description": "VigilGrace backend: auth, emergency contacts and phone verification codes.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test test/"
+  }
+}

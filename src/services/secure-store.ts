@@ -1,15 +1,15 @@
 /**
- * Chunked SecureStore wrapper.
+ * Platform-aware secure storage adapter.
  *
- * iOS keychain values above ~2 KB can be rejected by some system versions and
- * Android EncryptedSharedPreferences values are also limited in practice.
- * Post-quantum private keys are several KB (ML-KEM-768 sk = 2400 B,
- * ML-DSA-65 sk = 4032 B → ~5.4 KB base64), so values are split into small
- * chunks stored under derived keys with a manifest.
+ * Native (iOS/Android): Uses expo-secure-store (hardware-backed keychain/keystore)
+ * Web: Falls back to sessionStorage for preview only - NOT for production
  *
- * Keys are limited to [A-Za-z0-9._-] by expo-secure-store.
+ * SECURITY NOTE: Web storage is NOT secure. Use web preview only for development/demo.
+ * Sensitive data (auth tokens, encryption keys) should never be stored in browser storage
+ * in production. The native app is the only secure deployment target.
  */
 
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 const CHUNK_SIZE = 1200;
@@ -21,6 +21,58 @@ function partKey(key: string, index: number): string {
 
 const metaKey = (key: string) => `${key}__meta`;
 
+// Web fallback storage using sessionStorage (preview only)
+const webStorage = {
+  getItem: (key: string): string | null => {
+    if (typeof window === 'undefined' || !window.sessionStorage) return null;
+    try {
+      return window.sessionStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window === 'undefined' || !window.sessionStorage) return;
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch {
+      // Storage full or disabled - fail silently for web preview
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window === 'undefined' || !window.sessionStorage) return;
+    try {
+      window.sessionStorage.removeItem(key);
+    } catch {
+      // Ignore
+    }
+  },
+};
+
+// Platform-specific storage operations
+const storage = {
+  async getItemAsync(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return webStorage.getItem(key);
+    }
+    return SecureStore.getItemAsync(key);
+  },
+  async setItemAsync(key: string, value: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      webStorage.setItem(key, value);
+      return;
+    }
+    return SecureStore.setItemAsync(key, value);
+  },
+  async deleteItemAsync(key: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      webStorage.removeItem(key);
+      return;
+    }
+    return SecureStore.deleteItemAsync(key);
+  },
+};
+
 export async function setSecureItem(key: string, value: string): Promise<void> {
   if (!KEY_PATTERN.test(key)) throw new Error(`Invalid SecureStore key: ${key}`);
   const parts: string[] = [];
@@ -31,13 +83,13 @@ export async function setSecureItem(key: string, value: string): Promise<void> {
   const existingCount = await readMeta(key);
   if (existingCount !== null) {
     for (let i = parts.length; i < existingCount; i += 1) {
-      await SecureStore.deleteItemAsync(partKey(key, i));
+      await storage.deleteItemAsync(partKey(key, i));
     }
   }
   for (let i = 0; i < parts.length; i += 1) {
-    await SecureStore.setItemAsync(partKey(key, i), parts[i]!);
+    await storage.setItemAsync(partKey(key, i), parts[i]!);
   }
-  await SecureStore.setItemAsync(metaKey(key), String(parts.length));
+  await storage.setItemAsync(metaKey(key), String(parts.length));
 }
 
 export async function getSecureItem(key: string): Promise<string | null> {
@@ -46,10 +98,10 @@ export async function getSecureItem(key: string): Promise<string | null> {
   if (count === null) return null;
   let out = '';
   for (let i = 0; i < count; i += 1) {
-    const part = await SecureStore.getItemAsync(partKey(key, i));
+    const part = await storage.getItemAsync(partKey(key, i));
     if (part === null) {
       // Chunks missing → fall back to an un-chunked legacy value if present.
-      return SecureStore.getItemAsync(key);
+      return storage.getItemAsync(key);
     }
     out += part;
   }
@@ -60,20 +112,28 @@ export async function deleteSecureItem(key: string): Promise<void> {
   const count = await readMeta(key);
   if (count !== null) {
     for (let i = 0; i < count; i += 1) {
-      await SecureStore.deleteItemAsync(partKey(key, i));
+      await storage.deleteItemAsync(partKey(key, i));
     }
   }
-  await SecureStore.deleteItemAsync(metaKey(key));
-  await SecureStore.deleteItemAsync(key);
+  await storage.deleteItemAsync(metaKey(key));
+  await storage.deleteItemAsync(key);
 }
 
 async function readMeta(key: string): Promise<number | null> {
-  const raw = await SecureStore.getItemAsync(metaKey(key));
+  const raw = await storage.getItemAsync(metaKey(key));
   if (raw !== null) {
     const parsed = Number.parseInt(raw, 10);
     if (Number.isFinite(parsed) && parsed >= 0) return parsed;
   }
   // Backwards compatibility: un-chunked legacy value.
-  const legacy = await SecureStore.getItemAsync(key);
+  const legacy = await storage.getItemAsync(key);
   return legacy !== null ? 1 : null;
+}
+
+/**
+ * Check if the current platform supports secure storage.
+ * Web returns false (uses insecure fallback for preview only).
+ */
+export function isSecureStorageAvailable(): boolean {
+  return Platform.OS !== 'web';
 }

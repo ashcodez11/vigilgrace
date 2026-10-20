@@ -28,7 +28,6 @@ export interface SettingsState {
   voiceKeywords: string[];
   /** Record a consented short audio clip during SOS (metadata only leaves device). */
   evidenceRecordingConsent: boolean;
-  pendantDoublePressWindowMs: number;
   themeId: ThemeId;
 
   setCountdownSeconds: (seconds: number) => void;
@@ -39,7 +38,6 @@ export interface SettingsState {
   setVoiceRequireCorroboration: (required: boolean) => void;
   setVoiceKeywords: (keywords: string[]) => void;
   setEvidenceRecordingConsent: (consent: boolean) => void;
-  setPendantDoublePressWindowMs: (ms: number) => void;
   setThemeId: (themeId: ThemeId) => void;
 
   /** Derived acoustic config for the analyzer. */
@@ -57,7 +55,6 @@ export const useSettingsStore = create<SettingsState>()(
       voiceRequireCorroboration: true,
       voiceKeywords: DEFAULT_ACOUSTIC_CONFIG.keywords,
       evidenceRecordingConsent: false,
-      pendantDoublePressWindowMs: 450,
       themeId: 'gothic-noir',
 
       setCountdownSeconds: (seconds) =>
@@ -69,8 +66,6 @@ export const useSettingsStore = create<SettingsState>()(
       setVoiceRequireCorroboration: (voiceRequireCorroboration) => set({ voiceRequireCorroboration }),
       setVoiceKeywords: (voiceKeywords) => set({ voiceKeywords: voiceKeywords.slice(0, 20) }),
       setEvidenceRecordingConsent: (evidenceRecordingConsent) => set({ evidenceRecordingConsent }),
-      setPendantDoublePressWindowMs: (ms) =>
-        set({ pendantDoublePressWindowMs: Math.max(150, Math.min(1500, Math.round(ms))) }),
       setThemeId: (themeId) => set({ themeId }),
 
       acousticConfig: () => {

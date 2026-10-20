@@ -1,8 +1,11 @@
 import { Stack } from 'expo-router';
 
-import { colors } from '@/ui/theme';
+import { useTheme } from '@/ui/theme-context';
 
 export default function AppLayout() {
+  const { theme } = useTheme();
+  const colors = theme.colors;
+
   return (
     <Stack
       screenOptions={{
@@ -12,12 +15,17 @@ export default function AppLayout() {
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen name="tabs" options={{ headerShown: false }} />
-      <Stack.Screen name="motion" options={{ title: 'Motion trigger' }} />
-      <Stack.Screen name="voice" options={{ title: 'Voice distress' }} />
-      <Stack.Screen name="pendant" options={{ title: 'Pendant (BLE)' }} />
-      <Stack.Screen name="security" options={{ title: 'Secure communication' }} />
-      <Stack.Screen name="profile" options={{ title: 'Profile & permissions' }} />
+      {/* Primary screens live in the (tabs) group, which renders the tab bar. */}
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      {/*
+       * These screens render their own <Screen title subtitle> header, so the
+       * navigator header carries only the back affordance. Repeating the title
+       * in both places showed every heading twice.
+       */}
+      <Stack.Screen name="motion" options={{ title: '' }} />
+      <Stack.Screen name="voice" options={{ title: '' }} />
+      <Stack.Screen name="security" options={{ title: '' }} />
+      <Stack.Screen name="profile" options={{ title: '' }} />
     </Stack>
   );
 }

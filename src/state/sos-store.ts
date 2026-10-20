@@ -62,7 +62,10 @@ function describeOutcome(state: SosState): { title: string; body: string } | nul
             title: 'SOS accepted — delivery SIMULATED',
             body: `The backend recorded the emergency and simulated delivery to ${count} contact(s). Mock mode: no real SMS or calls were made.`,
           }
-        : { title: 'SOS delivered', body: `Delivery confirmed for ${count} contact(s).` };
+        : {
+            title: 'SOS dispatched',
+            body: `The backend dispatched your alert to ${count} contact(s). Provider acceptance is not proof the message reached the handset.`,
+          };
     }
     case 'failed':
       return {
@@ -99,6 +102,9 @@ export const useSosStore = create<SosStoreState>((set, get) => ({
 
   trigger: (source) => {
     get().init();
+    // Read the countdown setting at trigger time: changing it in Settings must
+    // affect the next SOS, not only the one after an app restart.
+    get().machine?.setCountdownMs(useSettingsStore.getState().countdownSeconds * 1000);
     get().machine?.trigger(source);
   },
 

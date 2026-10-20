@@ -46,7 +46,12 @@ class FakeScheduler {
   }
 }
 
-function report(status: AlertDeliveryReport['status'], delivered = true): AlertDeliveryReport {
+/** `detail: null` builds a result with no detail at all. */
+function report(
+  status: AlertDeliveryReport['status'],
+  delivered = true,
+  detail: string | null = 'mock delivery',
+): AlertDeliveryReport {
   return {
     alertId: 'a',
     status,
@@ -57,7 +62,7 @@ function report(status: AlertDeliveryReport['status'], delivered = true): AlertD
         contactName: 'Mom',
         channel: 'sms',
         state: delivered ? 'simulated' : 'failed',
-        detail: 'mock delivery',
+        ...(detail === null ? {} : { detail }),
       },
     ],
     updatedAt: new Date().toISOString(),
@@ -111,16 +116,52 @@ describe('SosMachine', () => {
     expect(machine.getState().report?.results[0]?.state).toBe('simulated');
   });
 
-  it('reports failure when backend accepts but no contact delivery succeeded', async () => {
+  it('reports failure and surfaces the backend’s own per-contact reason', async () => {
+    // Regression: a generic sentence ("no successful contact delivery") replaced
+    // the actionable reason — "no SMS provider configured", "number not
+    // routable" — at the exact moment the user needed to act on it.
+    const reason =
+      'No SMS provider is configured on the server, so no emergency message was sent to any contact.';
     const dispatch = vi.fn(async () => ({
       kind: 'accepted',
-      report: report('delivered', false),
+      report: report('failed', false, reason),
     }) as const);
     const { machine, scheduler } = makeMachine(dispatch as never);
     machine.trigger('shake');
     await scheduler.settle();
     expect(machine.getState().status).toBe('failed');
+    expect(machine.getState().lastError).toBe(reason);
+  });
+
+  it('falls back to a generic reason when the backend reports no detail', async () => {
+    const dispatch = vi.fn(async () => ({
+      kind: 'accepted',
+      report: report('delivered', false, null),
+    }) as const);
+    const { machine, scheduler } = makeMachine(dispatch as never);
+    machine.trigger('manual');
+    await scheduler.settle();
+    expect(machine.getState().status).toBe('failed');
     expect(machine.getState().lastError).toMatch(/no successful contact delivery/i);
+  });
+
+  it('applies a countdown change to the next trigger', async () => {
+    // Regression: the countdown was captured once when the machine was built, so
+    // changing it in Settings had no effect until the app was restarted.
+    const dispatch = vi.fn(async () => ({ kind: 'accepted', report: report('delivered') }) as const);
+    const { machine, scheduler } = makeMachine(dispatch as never, { countdownMs: 20000 });
+
+    machine.setCountdownMs(0);
+    machine.trigger('manual');
+    expect(machine.getState().status).toBe('sending');
+    await scheduler.settle();
+    expect(dispatch).toHaveBeenCalledTimes(1);
+
+    machine.reset();
+    machine.setCountdownMs(5000);
+    machine.trigger('shake');
+    expect(machine.getState().status).toBe('countdown');
+    expect(machine.getState().countdownEndsAt).toBe(5000);
   });
 
   it('retries unavailable dispatches with the SAME alertId and stops after maxAttempts', async () => {

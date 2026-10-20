@@ -36,6 +36,12 @@ export function useSosController() {
 
   const trigger = useCallback(
     (source: SosTriggerSource) => {
+      // Shake and voice can both fire while an alert is already running.
+      // The state machine ignores those triggers, so the recorder must not be
+      // restarted either: doing so aborted the clip already being captured and
+      // could leave the evidence note stuck on screen.
+      const current = useSosStore.getState().state.status;
+      if (current === 'countdown' || current === 'sending' || current === 'retrying') return;
       if (evidenceConsent) {
         void recorder.start();
       }
@@ -67,7 +73,9 @@ export function useSosController() {
     void (async () => {
       const clip = await recorder.stop();
       if (!clip) return;
-      if (state.status === 'delivered' && alertId && token) {
+      // Evidence belongs to any alert the backend actually recorded, including
+      // one whose delivery failed: that is when a recording matters most.
+      if (alertId && state.report && token) {
         const record = audioEvidenceRecord(clip.localUri, clip.bytes, clip.sizeBytes);
         try {
           await attachEvidence(token, alertId, [record]);
@@ -77,7 +85,7 @@ export function useSosController() {
       }
       if (token) void refreshHistory(token);
     })();
-  }, [state.status, state.alertId, recorder, token, refreshHistory]);
+  }, [state.status, state.alertId, state.report, recorder, token, refreshHistory]);
 
   return { state, trigger, cancel, confirmNow, retry, reset, evidenceRecording: recorder.recording };
 }

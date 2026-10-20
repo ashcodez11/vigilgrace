@@ -1,5 +1,9 @@
 /**
  * Shake-to-SOS monitor lifecycle hook (foreground only).
+ *
+ * The latest callback is kept in a ref updated by an effect, never written
+ * during render: React Compiler rejects render-time ref mutation, and a stale
+ * callback would make the detector trigger with out-of-date settings.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -12,18 +16,23 @@ export function useShakeMonitor(onTrigger: (source: SosTriggerSource) => void) {
   const shakeEnabled = useSettingsStore((s) => s.shakeEnabled);
   const shakeSensitivity = useSettingsStore((s) => s.shakeSensitivity);
   const onTriggerRef = useRef(onTrigger);
-  onTriggerRef.current = onTrigger;
+
+  useEffect(() => {
+    onTriggerRef.current = onTrigger;
+  }, [onTrigger]);
 
   const serviceRef = useRef<ShakeService | null>(null);
-  const [status, setStatus] = useState<ShakeStatus>('stopped');
-  const [error, setError] = useState<string | null>(null);
+  const [runtime, setRuntime] = useState<{ status: ShakeStatus; error: string | null }>({
+    status: 'stopped',
+    error: null,
+  });
 
   useEffect(() => {
     if (!shakeEnabled) {
+      // No setState here: the returned status below is derived from the setting,
+      // so disabling monitoring cannot cause a cascading render.
       serviceRef.current?.stop();
       serviceRef.current = null;
-      setStatus('stopped');
-      setError(null);
       return undefined;
     }
 
@@ -32,8 +41,7 @@ export function useShakeMonitor(onTrigger: (source: SosTriggerSource) => void) {
       onTrigger: () => onTriggerRef.current('shake'),
       onUpdate: (nextStatus, nextError) => {
         if (disposed) return;
-        setStatus(nextStatus);
-        setError(nextError);
+        setRuntime({ status: nextStatus, error: nextError });
       },
     });
     service.setSensitivity(shakeSensitivity);
@@ -47,5 +55,9 @@ export function useShakeMonitor(onTrigger: (source: SosTriggerSource) => void) {
     };
   }, [shakeEnabled, shakeSensitivity]);
 
-  return { status, error, enabled: shakeEnabled };
+  return {
+    status: shakeEnabled ? runtime.status : ('stopped' as const),
+    error: shakeEnabled ? runtime.error : null,
+    enabled: shakeEnabled,
+  };
 }

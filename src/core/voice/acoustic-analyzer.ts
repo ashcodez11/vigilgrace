@@ -33,7 +33,7 @@ export interface AcousticConfig {
   minConfidence: number;
   /**
    * When true a low/medium confidence event only *suggests* an emergency;
-   * auto-SOS requires corroboration (motion/pendant/manual confirm).
+   * auto-SOS requires corroboration (motion/manual confirm).
    */
   requireCorroboration: boolean;
   /** Distress keywords reserved for ASR-based matching (not matched on-device yet). */

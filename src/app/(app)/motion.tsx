@@ -29,13 +29,14 @@ export default function MotionSettingsScreen() {
   }, [sensitivity]);
 
   useEffect(() => {
+    const engine = engineRef.current;
     let subscription: { remove: () => void } | null = null;
     let mounted = true;
     if (shakeEnabled) {
       Accelerometer.setUpdateInterval(100);
       subscription = Accelerometer.addListener((m) => {
         if (!mounted) return;
-        const evaluation = engineRef.current.push({
+        const evaluation = engine.push({
           x: m.x,
           y: m.y,
           z: m.z,
@@ -48,8 +49,7 @@ export default function MotionSettingsScreen() {
     return () => {
       mounted = false;
       subscription?.remove();
-      engineRef.current.reset();
-      setPeaks(0);
+      engine.reset();
     };
   }, [shakeEnabled, sensitivity]);
 
@@ -100,8 +100,7 @@ export default function MotionSettingsScreen() {
       <Banner tone="warning" title="Foreground only">
         React Native/Expo does not deliver accelerometer updates while the app is backgrounded or
         killed. Shake detection is a foreground fallback — it is NOT a reliable continuous
-        background monitor and has not been tested as one. For always-on triggering use the BLE
-        pendant (development build + ESP32 hardware required).
+        background monitor and has not been tested as one.
       </Banner>
 
       <Banner tone="info" title="False-positive safeguards">

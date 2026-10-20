@@ -9,12 +9,7 @@
  */
 
 import { toBase64, fromBase64, type RandomSource } from '@/core/crypto/bytes';
-import {
-  type SignatureKeyPair,
-  type KemKeyPair,
-  generateKemKeyPair,
-  generateSignatureKeyPair,
-} from '@/core/crypto/pqc';
+import { type SignatureKeyPair, type KemKeyPair } from '@/core/crypto/pqc';
 import { cryptoRandom } from './random';
 import { deleteSecureItem, getSecureItem, setSecureItem } from './secure-store';
 
@@ -83,11 +78,27 @@ export async function cacheServerKeys(keys: CachedServerKeys, serverUrl: string)
   await setSecureItem(LAST_SERVER_URL_KEY, serverUrl);
 }
 
-export async function getCachedServerKeys(): Promise<CachedServerKeys | null> {
+/**
+ * Cached server public keys.
+ *
+ * Pass the API base URL you are about to talk to: the keys are pinned per
+ * server, and alerts sealed to one backend's KEM key cannot be opened by
+ * another. Returning a cache obtained from a different URL used to make every
+ * SOS fail with "envelope could not be opened" after the app was pointed at a
+ * new backend, until the user signed out and in again.
+ */
+export async function getCachedServerKeys(
+  serverUrl?: string,
+): Promise<CachedServerKeys | null> {
   const raw = await getSecureItem(SERVER_KEYS_KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as CachedServerKeys;
+    const parsed = JSON.parse(raw) as CachedServerKeys;
+    if (serverUrl) {
+      const cachedUrl = await getSecureItem(LAST_SERVER_URL_KEY);
+      if (cachedUrl && cachedUrl !== serverUrl) return null;
+    }
+    return parsed;
   } catch {
     return null;
   }

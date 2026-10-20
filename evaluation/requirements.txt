@@ -1,0 +1,11 @@
+# Pinned environment for evaluation/run_benchmark.py and test_metrics.py.
+# Verified on macOS x86_64 with Python 3.11.15.
+#   python3 -m venv venv && ./venv/bin/pip install -r requirements.txt
+#
+# TensorFlow 2.15.1 is used only for its TFLite interpreter
+# (tensorflow.lite.Interpreter). Python 3.11 is the last major version with
+# macOS x86_64 wheels for 2.15.x; otherwise use 3.12 + tensorflow>=2.17 or a
+# tflite-runtime wheel on Linux.
+numpy==1.26.4
+scipy==1.17.1
+tensorflow==2.15.1

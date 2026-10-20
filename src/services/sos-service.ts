@@ -22,10 +22,10 @@ import type {
   EvidenceMetadata,
   SosTriggerSource,
 } from '@/core/types';
+import { getApiBaseUrl } from './api';
 import {
   ApiError,
   fetchServerCrypto,
-  getApiBaseUrl,
   submitAlertEnvelope,
   type ServerCryptoInfo,
 } from './backend';
@@ -41,8 +41,11 @@ export function generateAlertId(): string {
 }
 
 export async function resolveServerCrypto(force = false): Promise<ServerCryptoInfo> {
+  const baseUrl = await getApiBaseUrl();
   if (!force) {
-    const cached = await getCachedServerKeys();
+    // Only reuse keys that were fetched from the backend we are about to talk
+    // to: envelopes sealed to another server's KEM key cannot be opened there.
+    const cached = await getCachedServerKeys(baseUrl);
     if (cached && Date.now() - Date.parse(cached.fetchedAt) < SERVER_KEYS_TTL_MS) {
       return {
         kemPublicKeyB64: cached.kemPublicKeyB64,
@@ -58,7 +61,7 @@ export async function resolveServerCrypto(force = false): Promise<ServerCryptoIn
       sigPublicKeyB64: info.sigPublicKeyB64,
       fetchedAt: new Date().toISOString(),
     },
-    await getApiBaseUrl(),
+    baseUrl,
   );
   return info;
 }
@@ -82,7 +85,10 @@ export async function dispatchSos(options: DispatchSosOptions): Promise<Dispatch
     const [identity, serverCrypto, location] = await Promise.all([
       loadOrCreateIdentity(),
       resolveServerCrypto(),
-      getCurrentFix(),
+      // Ask for location permission here if it has never been granted: without
+      // it the alert would carry no coordinates and the user would have no way
+      // to fix that mid-emergency. Failure is non-fatal — the alert still sends.
+      getCurrentFix({ requestPermission: true }),
     ]);
 
     const evidence: EvidenceMetadata[] = [...(options.evidence ?? [])];
@@ -127,6 +133,16 @@ export async function dispatchSos(options: DispatchSosOptions): Promise<Dispatch
   }
 }
 
+export function audioContentTypeForUri(localUri: string): string {
+  const ext = localUri.split('?')[0]?.split('.').pop()?.toLowerCase();
+  if (ext === '3gp') return 'audio/3gpp';
+  if (ext === 'wav') return 'audio/wav';
+  if (ext === 'caf') return 'audio/x-caf';
+  if (ext === 'aac') return 'audio/aac';
+  // RecordingPresets produce MPEG-4 containers on both iOS and Android.
+  return 'audio/mp4';
+}
+
 /** Build evidence metadata for a consented audio clip from its raw bytes. */
 export function audioEvidenceRecord(
   localUri: string,
@@ -140,7 +156,9 @@ export function audioEvidenceRecord(
     sha256: '',
     localUri,
     uploaded: false,
-    contentType: 'audio/m4a',
+    // Describe the container the recorder actually produced instead of
+    // hardcoding one extension's MIME type for every platform.
+    contentType: audioContentTypeForUri(localUri),
     sizeBytes,
     contentForHash: bytes,
   });

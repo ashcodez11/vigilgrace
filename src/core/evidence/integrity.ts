@@ -27,7 +27,11 @@ export function sha256Base64OfBytes(bytes: Uint8Array): string {
 }
 
 export function buildEvidenceRecord(
-  input: Omit<EvidenceMetadata, 'sha256'> & { contentForHash: string | Uint8Array },
+  input: Omit<EvidenceMetadata, 'sha256'> & {
+    /** Optional (and always ignored): the digest is computed from the bytes. */
+    sha256?: string;
+    contentForHash: string | Uint8Array;
+  },
 ): EvidenceMetadata {
   const bytes =
     typeof input.contentForHash === 'string'
@@ -35,6 +39,9 @@ export function buildEvidenceRecord(
       : input.contentForHash;
   const rest: Record<string, unknown> = { ...input };
   delete rest.contentForHash;
+  // A supplied digest is dropped rather than trusted: the record's hash must
+  // always describe the bytes handed to this function.
+  delete rest.sha256;
   return { ...(rest as unknown as Omit<EvidenceMetadata, 'sha256'>), sha256: sha256Base64OfBytes(bytes) };
 }
 

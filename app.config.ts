@@ -49,13 +49,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     icon: './assets/images/icon.png',
     scheme: 'vigilgrace',
     userInterfaceStyle: 'automatic',
-    newArchEnabled: true,
     ios: {
       supportsTablet: false,
       bundleIdentifier: 'com.vigilgrace.safety',
       infoPlist: {
-        NSBluetoothAlwaysUsageDescription:
-          'VigilGrace uses Bluetooth to connect to your safety pendant.',
         NSMotionUsageDescription:
           'VigilGrace uses motion sensors for the optional shake-to-SOS trigger.',
         NSLocationWhenInUseUsageDescription:
@@ -79,8 +76,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'RECORD_AUDIO',
         'POST_NOTIFICATIONS',
         'VIBRATE',
-        'BLUETOOTH_SCAN',
-        'BLUETOOTH_CONNECT',
       ],
     },
     web: {
@@ -111,7 +106,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           color: '#B3261E',
         },
       ],
-      'react-native-ble-plx',
       [
         'expo-splash-screen',
         {

@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { VoiceSensitivity } from '@/core/voice/acoustic-analyzer';
+import { ACOUSTIC_PRESETS, type VoiceSensitivity } from '@/core/voice/acoustic-analyzer';
 import { useSettingsStore } from '@/state/settings-store';
 import { useVoiceLogStore } from '@/state/voice-log-store';
 import { AppButton, Badge, Banner, Card, Field, Row, Screen, ToggleRow } from '@/ui/components';
@@ -60,10 +60,9 @@ export default function VoiceSettingsScreen() {
     <Screen title="Voice distress" subtitle="Acoustic prototype — status is honest below">
       <Banner tone="warning" title="PROTOTYPE — not a confirmed detector">
         VigilGrace performs on-device acoustic analysis (loudness in dBFS, zero-crossing-rate
-        speech-likeness, sustained-shout energy and optional keyword spotting). There is NO
-        on-device speech-to-text and no classification model. A candidate event alone never sends
-        an SOS unless you configure it that way (see corroboration) — even then, treat it as
-        unconfirmed.
+        speech-likeness and sustained-shout energy). There is NO on-device speech-to-text, no
+        keyword matching and no classification model. A candidate event alone never sends an SOS
+        unless you configure it that way (see corroboration) — even then, treat it as unconfirmed.
       </Banner>
 
       <ToggleRow
@@ -90,7 +89,12 @@ export default function VoiceSettingsScreen() {
             />
           ))}
         </View>
-        <Row label="Candidate threshold" value={`high-confidence ≥ ${sensitivity === 'high' ? '0.5' : sensitivity === 'medium' ? '0.65' : '0.8'} confidence`} />
+        <Row
+          label="Candidate threshold"
+          value={`confidence ≥ ${ACOUSTIC_PRESETS[sensitivity].minConfidence.toFixed(2)} · burst ≥ ${Math.round(
+            ACOUSTIC_PRESETS[sensitivity].minBurstMs,
+          )} ms`}
+        />
         <ToggleRow
           label="Require corroboration"
           description="Recommended. A candidate only becomes an SOS after a confirmation prompt, or when a shake-to-SOS fired in the previous 15 s."
@@ -106,10 +110,12 @@ export default function VoiceSettingsScreen() {
       </Card>
 
       <Card>
-        <Text style={styles.sectionTitle}>Optional keyword assist</Text>
+        <Text style={styles.sectionTitle}>Keyword list (not active yet)</Text>
         <Text style={styles.hint}>
-          Keywords are matched with a lightweight normalized scorer (not a speech recognizer). They
-          contribute a small confidence boost; they do not transcribe speech.
+          These words are saved for a future on-device speech recogniser. In this build nothing is
+          transcribed and no keyword is matched against audio, so the list does not change the
+          score. Shouting or saying a word only triggers an event through loudness and
+          speech-likeness, not through the words themselves.
         </Text>
         {keywords.map((word) => (
           <View key={word} style={styles.chipRow}>
@@ -144,7 +150,7 @@ export default function VoiceSettingsScreen() {
             <Row
               key={`${entry.at}`}
               label={`${new Date(entry.at).toLocaleTimeString()} · ${(entry.confidence * 100).toFixed(0)}% · ${entry.dbfs.toFixed(0)} dBFS`}
-              value={`${entry.reason}${entry.highConfidence ? ' · high' : ''}`}
+              value={`${entry.voiced ? 'speech-like' : 'noise burst'}${entry.highConfidence ? ' · high' : ''}`}
             />
           ))
         )}

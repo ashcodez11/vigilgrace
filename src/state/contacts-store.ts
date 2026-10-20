@@ -16,6 +16,17 @@ import {
 } from '@/services/backend';
 import { ApiError } from '@/services/api';
 
+/**
+ * Delivery modes that mean the backend really handed a code to a provider.
+ * Anything else (notably `unknown`) means nothing was sent, so the UI must not
+ * ask for a code that does not exist.
+ */
+const DISPATCHED_DELIVERIES = ['mock', 'twilio', 'webhook'] as const;
+
+export function isDispatchedDelivery(delivery: string): boolean {
+  return (DISPATCHED_DELIVERIES as readonly string[]).includes(delivery);
+}
+
 interface ContactsState {
   contacts: EmergencyContact[];
   loading: boolean;
@@ -113,6 +124,19 @@ export const useContactsStore = create<ContactsState>((set, get) => ({
     set({ error: null });
     try {
       const response = await requestContactVerification(token, id);
+
+      // Guard: never enter the code-entry state — and never mark the contact as
+      // "verification requested" — unless a provider actually accepted a code.
+      if (!isDispatchedDelivery(response.delivery)) {
+        set({
+          pendingVerify: null,
+          error:
+            `The backend did not send a verification code (delivery: ${response.delivery}), ` +
+            'so nothing was sent. Configure an SMS provider on the server, then request a new code.',
+        });
+        return null;
+      }
+
       set({
         pendingVerify: {
           contactId: id,
@@ -129,6 +153,8 @@ export const useContactsStore = create<ContactsState>((set, get) => ({
         set({ error: 'Verification requested too recently — try again later' });
         return null;
       }
+      // ApiError carries the server's own reason (e.g. "No SMS provider is
+      // configured…"); BackendUnreachableError explains the transport failure.
       set({ error: (err as Error).message });
       return null;
     }

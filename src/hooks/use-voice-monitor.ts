@@ -8,7 +8,7 @@
  * how to corroborate (config.requireCorroboration).
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   requestRecordingPermissionsAsync,
   useAudioStream,
@@ -36,11 +36,19 @@ export function useVoiceMonitor(
 ): VoiceMonitorResult {
   const analyzerRef = useRef(new AcousticDistressAnalyzer(config));
   const onEventRef = useRef(onEvent);
-  onEventRef.current = onEvent;
-  const [status, setStatus] = useState<VoiceMonitorStatus>('idle');
-  const [error, setError] = useState<string | null>(null);
+  const [runtime, setRuntime] = useState<{ status: VoiceMonitorStatus; error: string | null }>({
+    status: 'idle',
+    error: null,
+  });
   const [lastEvent, setLastEvent] = useState<DistressEvent | null>(null);
   const [eventCount, setEventCount] = useState(0);
+
+  // Callback identity changes every render; keep the ref current from an effect
+  // instead of writing it during render (React Compiler rejects that, and a
+  // stale callback would push events into an unmounted screen's state).
+  useEffect(() => {
+    onEventRef.current = onEvent;
+  }, [onEvent]);
 
   const configKey = useMemo(() => JSON.stringify(config), [config]);
 
@@ -50,7 +58,9 @@ export function useVoiceMonitor(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configKey]);
 
-  const onBuffer = useRef((buffer: AudioStreamBuffer) => {
+  // Stable across renders: rebuilding this callback on every render changed the
+  // stream options object, which restarted the audio stream mid-monitoring.
+  const onBuffer = useCallback((buffer: AudioStreamBuffer) => {
     const samples = new Float32Array(buffer.data);
     const evaluation = analyzerRef.current.analyze(samples, buffer.sampleRate, Date.now());
     if (evaluation.event) {
@@ -58,7 +68,7 @@ export function useVoiceMonitor(
       setEventCount((n) => n + 1);
       onEventRef.current?.(evaluation.event);
     }
-  }).current;
+  }, []);
 
   const streamOptions = useMemo(
     () => ({
@@ -76,33 +86,30 @@ export function useVoiceMonitor(
   useEffect(() => {
     let cancelled = false;
     if (!enabled) {
+      // Status is derived below while disabled, so no setState is needed here.
       try {
         stream.stop();
       } catch {
         // not started
       }
-      setStatus('idle');
       return undefined;
     }
 
-    setStatus('starting');
-    setError(null);
-    (async () => {
+    void (async () => {
+      setRuntime({ status: 'starting', error: null });
       try {
         const permission = await requestRecordingPermissionsAsync();
         if (!permission.granted) {
           if (!cancelled) {
-            setStatus('denied');
-            setError('Microphone permission denied');
+            setRuntime({ status: 'denied', error: 'Microphone permission denied' });
           }
           return;
         }
         await stream.start();
-        if (!cancelled) setStatus('running');
+        if (!cancelled) setRuntime({ status: 'running', error: null });
       } catch (err) {
         if (!cancelled) {
-          setStatus('error');
-          setError((err as Error).message);
+          setRuntime({ status: 'error', error: (err as Error).message });
         }
       }
     })();
@@ -117,5 +124,10 @@ export function useVoiceMonitor(
     };
   }, [enabled, stream]);
 
-  return { status, error, lastEvent, eventCount };
+  return {
+    status: enabled ? runtime.status : ('idle' as const),
+    error: enabled ? runtime.error : null,
+    lastEvent,
+    eventCount,
+  };
 }

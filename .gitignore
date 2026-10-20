@@ -52,3 +52,10 @@ backend/server/node_modules/
 # Allow src/core/evidence/ source code, but block data directories
 /evidence/
 backend/server/evidence/
+
+# AI evaluation harness: model binary, downloaded audio and local venv stay out.
+# The harness itself (evaluation/*.py, requirements, NOTICE, results) is tracked.
+evaluation/data/
+evaluation/models/
+evaluation/venv/
+__pycache__/

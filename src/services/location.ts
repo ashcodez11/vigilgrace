@@ -37,10 +37,27 @@ export async function requestLocationPermission(): Promise<LocationPermissionSta
  * Best-effort current fix: tries a high-accuracy fresh position, falls back to
  * the last known position. Returns null when permission is denied or location
  * services are off — the SOS alert is still sent (without coordinates).
+ *
+ * `requestPermission` is for the SOS path only: an emergency the user started is
+ * the one moment it is legitimate to ask for location, and asking only when
+ * permission is not already granted and can still be requested means the prompt
+ * appears at most once.
  */
-export async function getCurrentFix(): Promise<GeoLocationFix | null> {
-  const permission = await checkLocationPermission();
-  if (!permission.granted) return null;
+export async function getCurrentFix(
+  options: { requestPermission?: boolean } = {},
+): Promise<GeoLocationFix | null> {
+  try {
+    let permission = await checkLocationPermission();
+    if (!permission.granted && options.requestPermission && permission.canAskAgain) {
+      permission = await requestLocationPermission();
+    }
+    if (!permission.granted) return null;
+  } catch {
+    // Location must never sink an emergency alert: on a device/emulator where
+    // the location module or permission API is unavailable, the call used to
+    // reject and took the whole SOS dispatch down with it.
+    return null;
+  }
 
   try {
     const position = await Location.getCurrentPositionAsync({

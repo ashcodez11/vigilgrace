@@ -88,10 +88,11 @@ export class SosMachine {
   private dispatching = false;
   private cancelled = false;
 
-  private readonly countdownMs: number;
   private readonly maxAttempts: number;
   private readonly baseBackoffMs: number;
   private readonly maxBackoffMs: number;
+
+  private countdownMs: number;
 
   constructor(private readonly options: SosMachineOptions) {
     this.countdownMs = options.countdownMs ?? DEFAULT_SOS_OPTIONS.countdownMs;
@@ -102,6 +103,15 @@ export class SosMachine {
 
   getState(): SosState {
     return { ...this.state };
+  }
+
+  /**
+   * Update the countdown length from the user's current setting. Applied to the
+   * next trigger — changing the setting in Settings used to have no effect until
+   * the app was restarted, because the machine captured it once at construction.
+   */
+  setCountdownMs(countdownMs: number): void {
+    this.countdownMs = Math.max(0, Math.round(countdownMs));
   }
 
   isActive(): boolean {
@@ -221,10 +231,17 @@ export class SosMachine {
     if (outcome.kind === 'accepted') {
       this.dispatching = false;
       const confirmed = hasConfirmedDelivery(outcome.report);
+      // When the backend accepted the alert but dispatched nothing, its own
+      // per-contact reason is the actionable one. A generic sentence here hid
+      // the real cause ("no SMS provider configured", "contact number not
+      // routable") from the person who needed to act on it.
+      const reason =
+        outcome.report.results.find((r) => r.state === 'failed' && r.detail)?.detail ??
+        'Backend accepted the alert but reported no successful contact delivery';
       this.update({
         status: confirmed ? 'delivered' : 'failed',
         report: outcome.report,
-        lastError: confirmed ? null : 'Backend accepted the alert but reported no successful contact delivery',
+        lastError: confirmed ? null : reason,
       });
       return;
     }
